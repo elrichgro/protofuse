@@ -1,3 +1,5 @@
+package pfuse
+
 import (
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
