@@ -14,7 +14,8 @@ import (
 	"io"
 
 	"github.com/gogo/protobuf/proto"
-	"elrich/protobuf/tutorial"
+	"elrich/protofuse/fuse"
+	"elrich/protofuse/protobuf"
 )
 
 func main() {
@@ -65,24 +66,26 @@ func main() {
   	err = proto.Unmarshal(buffer, file_descriptor_set)
   	CheckError(err)
 
-  	// TODO: read message name and use it to get DescriptorProto
+  	// Get file descriptor proto
+  	// TODO: string or *string?
+  	var string messageName = os.Args[4]
+  	fileDescriptor := &google_protobuf.FileDescriptorProto{}
+  	err := getDescriptorProto(fileDescriptor, messageName)
+  	CheckError(err)
 
+  	PT := &pfuse.ProtoTree{}
 
+  	// Parse the FileDescriptorProto
+  	err = parser.Parse(fileDescriptor, buf, PT)
+  	CheckError(err)
 
-	// PT, err := buildTree(address_book)
-	// // DoNothing(PT)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
+  	// Start FUSE serve loop
+  	err = fs.Serve(c, PT)
+  	CheckError(err)
 
-	// err = fs.Serve(c, &PT)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// // check if the mount process has an error to report
-	// <-c.Ready
-	// if err := c.MountError; err != nil {
-	// 	log.Fatal(err)
-	// }
+	// check if the mount process has an error to report
+	<-c.Ready
+	if err := c.MountError; err != nil {
+		log.Fatal(err)
+	}
 }
