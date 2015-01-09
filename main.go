@@ -12,16 +12,23 @@ import (
 	"os"
 	"log"
 	"io"
+	"bytes"
 
-	"github.com/gogo/protobuf/proto"
+	"bazil.org/fuse"
+	"bazil.org/fuse/fs"
+
+	"github.com/gogo/protobuf/parser"
 	"elrich/protofuse/fuse"
-	"elrich/protofuse/protobuf"
+	"elrich/protofuse/parser"
+	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 )
+
+var fileDesc google_protobuf.FileDescriptorProto
 
 func main() {
 	
 	if len(os.Args) != 5 {
-       fmt.Printf("Usage: %s MOUNT_LOCATION, MARSHALLED_PROTOCOL_BUFFER, PROTO_FILE, MESSAGE_NAME\n", os.Args[0])
+       fmt.Printf("Usage: %s MOUNT_LOCATION, MARSHALLED_PROTOCOL_BUFFER, PROTO_FILE_LOCATION, MESSAGE_NAME\n", os.Args[0])
        os.Exit(-1)
    	}
 
@@ -52,31 +59,24 @@ func main() {
    	// [end copy]
 
    	// Read .proto file and generate FileDescriptorSet
-   	file, err = os.Open(os.Args[3])
-   	CheckError(err)
+   	filename := string(os.Args[3])
 
-   	fi, err = file.Stat()
-   	CheckError(err)
-
-   	buffer := make([]byte, fi.Size())
-   	_, err = io.ReadFull(file, buffer)
-   	file.Close()
-
-   	file_descriptor_set := &google_protobuf.FileDescriptorSet{}
-  	err = proto.Unmarshal(buffer, file_descriptor_set)
+   	file_descriptor_set, err := parser.ParseFile(filename, ".")
   	CheckError(err)
 
+  	fileDesc = *file_descriptor_set.File[0]
+
   	// Get file descriptor proto
-  	// TODO: string or *string?
-  	var string messageName = os.Args[4]
-  	fileDescriptor := &google_protobuf.FileDescriptorProto{}
-  	err := getDescriptorProto(fileDescriptor, messageName)
+  	var messageName string = os.Args[4]
+  	desc := &google_protobuf.DescriptorProto{}
+  	GetDescriptorProto(desc, messageName, nil) // TODO: err = GetDescriptorProto(desc, messageName)
   	CheckError(err)
 
   	PT := &pfuse.ProtoTree{}
 
   	// Parse the FileDescriptorProto
-  	err = parser.Parse(fileDescriptor, buf, PT)
+  	// TODO: make parser return err 
+  	protoparser.Parse(desc, bytes.NewBuffer(buf), PT)
   	CheckError(err)
 
   	// Start FUSE serve loop
@@ -88,4 +88,34 @@ func main() {
 	if err := c.MountError; err != nil {
 		log.Fatal(err)
 	}
+}
+
+// copied from tutorial
+func CheckError(err error) {
+   if err != nil {
+       fmt.Println(err.Error())
+       os.Exit(-1)
+   }
+}
+
+func GetDescriptorProto(desc *google_protobuf.DescriptorProto, name string, messageDesc *google_protobuf.DescriptorProto) {
+	if messageDesc != nil {
+		for _, message := range messageDesc.NestedType {
+			if *message.Name == name {
+				*desc = *message
+				return
+			}
+		}
+	}
+
+	for _, message := range fileDesc.MessageType {
+		if *message.Name == name {
+			*desc = *message
+			return
+		}
+	}
+
+	//TODO: else throw error message could not be found
+	// *desc = nil
+	fmt.Println("Can't find message\n")
 }
