@@ -23,7 +23,7 @@ import (
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 )
 
-var fileDesc google_protobuf.FileDescriptorProto
+var fileDesc *google_protobuf.FileDescriptorProto
 
 func main() {
 	
@@ -61,22 +61,23 @@ func main() {
    	// Read .proto file and generate FileDescriptorSet
    	filename := string(os.Args[3])
 
-   	file_descriptor_set, err := parser.ParseFile(filename, ".")
+   	fileDescSet, err := parser.ParseFile(filename, ".")
   	CheckError(err)
 
-  	fileDesc = *file_descriptor_set.File[0]
+  	fileDesc = fileDescSet.File[0]
 
   	// Get file descriptor proto
   	var messageName string = os.Args[4]
   	desc := &google_protobuf.DescriptorProto{}
-  	GetDescriptorProto(desc, messageName, nil) // TODO: err = GetDescriptorProto(desc, messageName)
+  	fmt.Println("1")
+  	desc = GetDescriptorProto(messageName, nil) // TODO: err = GetDescriptorProto(desc, messageName)
   	CheckError(err)
 
   	PT := &pfuse.ProtoTree{}
 
   	// Parse the FileDescriptorProto
   	// TODO: make parser return err 
-  	protoparser.Parse(desc, bytes.NewBuffer(buf), PT)
+  	protoparser.Parse(fileDesc, desc, bytes.NewBuffer(buf), PT)
   	CheckError(err)
 
   	// Start FUSE serve loop
@@ -98,24 +99,23 @@ func CheckError(err error) {
    }
 }
 
-func GetDescriptorProto(desc *google_protobuf.DescriptorProto, name string, messageDesc *google_protobuf.DescriptorProto) {
+func GetDescriptorProto(name string, messageDesc *google_protobuf.DescriptorProto) *google_protobuf.DescriptorProto {
 	if messageDesc != nil {
 		for _, message := range messageDesc.NestedType {
 			if *message.Name == name {
-				*desc = *message
-				return
+				return message
 			}
 		}
 	}
 
 	for _, message := range fileDesc.MessageType {
 		if *message.Name == name {
-			*desc = *message
-			return
+			return message
 		}
 	}
 
 	//TODO: else throw error message could not be found
 	// *desc = nil
 	fmt.Println("Can't find message\n")
+	return nil
 }
