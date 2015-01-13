@@ -6,7 +6,6 @@ import (
 	"bazil.org/fuse/fs"
 )
 
-
 type ProtoTree struct {
 	Dir
 }

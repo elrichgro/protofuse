@@ -69,7 +69,6 @@ func main() {
   	// Get file descriptor proto
   	var messageName string = os.Args[4]
   	desc := &google_protobuf.DescriptorProto{}
-  	fmt.Println("1")
   	desc = GetDescriptorProto(messageName, nil) // TODO: err = GetDescriptorProto(desc, messageName)
   	CheckError(err)
 
