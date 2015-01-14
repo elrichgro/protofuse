@@ -4,6 +4,8 @@ import (
 	"os"
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
+
+	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 )
 
 type ProtoTree struct {
@@ -14,11 +16,11 @@ func (t *ProtoTree) Root() (fs.Node, fuse.Error) {
 	return &t.Dir, nil
 }
 
-// treeNode represents each node in the tree
+// treeNode represents each node in the filesystem tree
 type TreeNode struct {
 	Name string
 	FieldNumber uint64
-	// TODO: add type as a field
+	Type google_protobuf.FieldDescriptorProto_Type
 	Node fs.Node
 }
 

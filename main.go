@@ -113,8 +113,7 @@ func GetDescriptorProto(name string, messageDesc *google_protobuf.DescriptorProt
 		}
 	}
 
-	//TODO: else throw error message could not be found
-	// *desc = nil
+	//TODO: throw error
 	fmt.Println("Can't find message\n")
 	return nil
 }
