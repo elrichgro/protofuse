@@ -13,13 +13,13 @@ import (
 	"log"
 	"io"
 	"bytes"
+	"errors"
 
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
 
 	"github.com/gogo/protobuf/parser"
-	"elrich/protofuse/fuse"
-	"elrich/protofuse/parser"
+	"elrich/protofuse/decoder"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 )
 
@@ -69,14 +69,11 @@ func main() {
   	// Get file descriptor proto
   	var messageName string = os.Args[4]
   	desc := &google_protobuf.DescriptorProto{}
-  	desc = GetDescriptorProto(messageName, nil) // TODO: err = GetDescriptorProto(desc, messageName)
+  	desc, err = GetDescriptorProto(messageName, nil) // TODO: err = GetDescriptorProto(desc, messageName)
   	CheckError(err)
 
-  	PT := &pfuse.ProtoTree{}
-
-  	// Parse the FileDescriptorProto
-  	// TODO: make parser return err 
-  	protoparser.Parse(fileDesc, desc, bytes.NewBuffer(buf), PT)
+  	// Decode the Protobuf
+  	PT, err := decoder.Decode(fileDesc, desc, bytes.NewBuffer(buf))
   	CheckError(err)
 
   	// Start FUSE serve loop
@@ -98,22 +95,21 @@ func CheckError(err error) {
    }
 }
 
-func GetDescriptorProto(name string, messageDesc *google_protobuf.DescriptorProto) *google_protobuf.DescriptorProto {
+func GetDescriptorProto(name string, messageDesc *google_protobuf.DescriptorProto) (*google_protobuf.DescriptorProto, error) {
 	if messageDesc != nil {
 		for _, message := range messageDesc.NestedType {
 			if *message.Name == name {
-				return message
+				return message, nil
 			}
 		}
 	}
 
 	for _, message := range fileDesc.MessageType {
 		if *message.Name == name {
-			return message
+			return message, nil
 		}
 	}
 
 	//TODO: throw error
-	fmt.Println("Can't find message\n")
-	return nil
+	return nil, errors.New("Cannot find message: " + name)
 }
