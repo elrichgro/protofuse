@@ -19,7 +19,7 @@ import (
 	"bazil.org/fuse/fs"
 
 	"github.com/gogo/protobuf/parser"
-	"elrich/protofuse/decoder"
+	"elrich/protofuse/unmarshal"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 )
 
@@ -46,7 +46,7 @@ func main() {
 	}
 	defer c.Close()
 
-	// Read protocol buffer and create buffer [copied from tutorial]
+	// Read protocol buffer and create buffer 
    	file, err := os.Open(os.Args[2])
    	CheckError(err)
 
@@ -56,7 +56,6 @@ func main() {
    	buf := make([]byte, fi.Size())
    	_, err = io.ReadFull(file, buf)
    	file.Close()
-   	// [end copy]
 
    	// Read .proto file and generate FileDescriptorSet
    	filename := string(os.Args[3])
@@ -72,8 +71,8 @@ func main() {
   	desc, err = GetDescriptorProto(messageName, nil) // TODO: err = GetDescriptorProto(desc, messageName)
   	CheckError(err)
 
-  	// Decode the Protobuf
-  	PT, err := decoder.Decode(fileDesc, desc, bytes.NewBuffer(buf))
+  	// Unmarshal the Protobuf
+  	PT, err := unmarshal.Unmarshal(fileDesc, desc, bytes.NewBuffer(buf))
   	CheckError(err)
 
   	// Start FUSE serve loop
