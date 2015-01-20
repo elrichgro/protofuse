@@ -119,7 +119,6 @@ func unmarshalMessage(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, 
 }
 
 func decodeKey(buf *bytes.Buffer) (int8, uint64, error) {
-  	// x := decodeVarint(buf)
   	x, n := binary.Uvarint(buf.Bytes())
   	if n <= 0 {
   		return 0, 0, fmt.Errorf("decodeVarint n = %d", n)
@@ -143,11 +142,9 @@ func decodeKey(buf *bytes.Buffer) (int8, uint64, error) {
 //   	return x
 // }
 
-// TODO: add switch block for different varint types
 func unmarshal0(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfuse.TreeNode, rN int32) error {
   	var field *google_protobuf.FieldDescriptorProto = desc.Field[t.FieldNumber-1]
 	var contents string
-	// x := decodeVarint(buf)
 	if rN != 0 {
 		t.Name = fmt.Sprintf(*field.Name + "%d", rN)
 	} else {
@@ -260,7 +257,6 @@ func unmarshal1(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfu
 	return nil
 }
 
-// TODO: add switch block for different field types
 func unmarshal2(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfuse.TreeNode, rN int32) error {
   	len, n := binary.Uvarint(buf.Bytes())
   	if n <= 0 {
@@ -513,20 +509,4 @@ func GetDescriptorProto(name string) (*google_protobuf.DescriptorProto, error) {
 		return nil, fmt.Errorf("Cannot find message: %s", name)
 	}
 	return nil, fmt.Errorf("Message name not fully qualified: %s", name)
-
-	// if messageDesc != nil {
-	// 	for _, message := range messageDesc.NestedType {
-	// 		if *message.Name == name {
-	// 			return message, nil
-	// 		}
-	// 	}
-	// }
-
-	// for _, message := range fileDesc.File[0].MessageType {
-	// 	if *message.Name == name {
-	// 		return message, nil
-	// 	}
-	// }
-
-	// return nil, errors.New("Cannot find message: " + name)
 }
