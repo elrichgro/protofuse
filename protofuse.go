@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"elrich/protofuse/mount"
 	"github.com/gogo/protobuf/parser"
@@ -54,7 +55,7 @@ func main() {
 
 	filename := string(os.Args[3])
 
-	fileDescSet, err := parser.ParseFile(filename, ".")
+	fileDescSet, err := parser.ParseFile(filename, filename[:strings.LastIndex(filename, "/")])
 	CheckError(err)
 	var messageName string = os.Args[4]
 
