@@ -16,7 +16,8 @@ package protofuse
 
 import (
 	"log"
-	"errors"
+	"strings"
+	"fmt"
 
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
@@ -39,12 +40,12 @@ func Mount(marshaled []byte, fileDesc *google_protobuf.FileDescriptorSet, messag
 	defer c.Close()
 
   	desc := &google_protobuf.DescriptorProto{}
-  	desc, err = GetDescriptorProto(messageName, nil, fileDesc.File[0])
+  	desc, err = GetDescriptorProto(messageName, fileDesc)
   	if err != nil {
   		return err
   	}
 
-  	PT, err := unmarshal.Unmarshal(fileDesc.File[0], desc, [][]byte{marshaled})
+  	PT, err := unmarshal.Unmarshal(fileDesc, desc, [][]byte{marshaled})
   	if err != nil {
   		return err
   	}
@@ -77,12 +78,12 @@ func MountList(marshaled [][]byte, fileDesc *google_protobuf.FileDescriptorSet, 
 	defer c.Close()
 
   	desc := &google_protobuf.DescriptorProto{}
-  	desc, err = GetDescriptorProto(messageName, nil, fileDesc.File[0])
+  	desc, err = GetDescriptorProto(messageName, fileDesc)
   	if err != nil {
   		return err
   	}
 
-  	PT, err := unmarshal.Unmarshal(fileDesc.File[0], desc, marshaled)
+  	PT, err := unmarshal.Unmarshal(fileDesc, desc, marshaled)
   	if err != nil {
   		return err
   	}
@@ -101,21 +102,35 @@ func MountList(marshaled [][]byte, fileDesc *google_protobuf.FileDescriptorSet, 
 	return nil
 }
 
+func GetDescriptorProto(name string, fileDesc *google_protobuf.FileDescriptorSet) (*google_protobuf.DescriptorProto, error) {
+	if string(name[0]) == "." {
+		s := strings.Split(name, ".")
+		slen := len(s)
+		for _, file := range fileDesc.File {
+			if file.GetPackage() == s[1] {
+				for _, message := range file.MessageType {
+					if message.GetName() == s[2] {
+						if slen <= 3 {
+							return message, nil
+						}
+						var m *google_protobuf.DescriptorProto = message
 
-func GetDescriptorProto(name string, messageDesc *google_protobuf.DescriptorProto, fileDesc *google_protobuf.FileDescriptorProto) (*google_protobuf.DescriptorProto, error) {
-	if messageDesc != nil {
-		for _, message := range messageDesc.NestedType {
-			if *message.Name == name {
-				return message, nil
+						for i := 3; i < slen; i++ {
+							for _, d := range m.GetNestedType() {
+								if d.GetName() == s[i] {
+									if i >= slen - 1 {
+										return d, nil
+									}
+									m = d
+								}
+							}
+						}
+						return nil, fmt.Errorf("Cannot find message1: %s", name)
+					}
+				}
 			}
 		}
+		return nil, fmt.Errorf("Cannot find message: %s", name)
 	}
-
-	for _, message := range fileDesc.MessageType {
-		if *message.Name == name {
-			return message, nil
-		}
-	}
-
-	return nil, errors.New("Cannot find message: " + name)
+	return nil, fmt.Errorf("Message name not fully qualified: %s", name)
 }

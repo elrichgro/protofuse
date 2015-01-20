@@ -26,9 +26,9 @@ import (
 	"elrich/protofuse/fuse"
 )
 
-var fileDesc *google_protobuf.FileDescriptorProto
+var fileDesc *google_protobuf.FileDescriptorSet
 
-func Unmarshal(fDesc *google_protobuf.FileDescriptorProto, desc *google_protobuf.DescriptorProto, buf [][]byte) (*pfuse.ProtoTree, error) {
+func Unmarshal(fDesc *google_protobuf.FileDescriptorSet, desc *google_protobuf.DescriptorProto, buf [][]byte) (*pfuse.ProtoTree, error) {
 	fileDesc = fDesc
 	PT := &pfuse.ProtoTree{}
 	PT.Dir.Nodes = []pfuse.TreeNode{}
@@ -288,8 +288,8 @@ func unmarshal2(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfu
   		}
   		t.Node = &pfuse.File{buffer.String()}
   	case google_protobuf.FieldDescriptorProto_TYPE_MESSAGE:
-  		var messageName string = (*field.TypeName)[strings.LastIndex(*field.TypeName, ".")+1:]
-  		messageDesc, err := GetDescriptorProto(messageName, desc)
+  		var messageName string = (*field.TypeName)
+  		messageDesc, err := GetDescriptorProto(messageName)
 		if err != nil {
 			return err
 		}
@@ -482,21 +482,51 @@ func decodeSint64(buf []byte) (int64, int, error) {
 	return int64((v >> 1) ^ uint64((int64(v&1)<<63)>>63)), n, nil
 }
 
-// TODO: update to work with fully qualified message names
-func GetDescriptorProto(name string, messageDesc *google_protobuf.DescriptorProto) (*google_protobuf.DescriptorProto, error) {
-	if messageDesc != nil {
-		for _, message := range messageDesc.NestedType {
-			if *message.Name == name {
-				return message, nil
+func GetDescriptorProto(name string) (*google_protobuf.DescriptorProto, error) {
+	if string(name[0]) == "." {
+		s := strings.Split(name, ".")
+		slen := len(s)
+		for _, file := range fileDesc.File {
+			if file.GetPackage() == s[1] {
+				for _, message := range file.MessageType {
+					if message.GetName() == s[2] {
+						if slen <= 3 {
+							return message, nil
+						}
+						var m *google_protobuf.DescriptorProto = message
+
+						for i := 3; i < slen; i++ {
+							for _, d := range m.GetNestedType() {
+								if d.GetName() == s[i] {
+									if i >= slen - 1 {
+										return d, nil
+									}
+									m = d
+								}
+							}
+						}
+						return nil, fmt.Errorf("Cannot find message1: %s", name)
+					}
+				}
 			}
 		}
+		return nil, fmt.Errorf("Cannot find message: %s", name)
 	}
+	return nil, fmt.Errorf("Message name not fully qualified: %s", name)
 
-	for _, message := range fileDesc.MessageType {
-		if *message.Name == name {
-			return message, nil
-		}
-	}
+	// if messageDesc != nil {
+	// 	for _, message := range messageDesc.NestedType {
+	// 		if *message.Name == name {
+	// 			return message, nil
+	// 		}
+	// 	}
+	// }
 
-	return nil, errors.New("Cannot find message: " + name)
+	// for _, message := range fileDesc.File[0].MessageType {
+	// 	if *message.Name == name {
+	// 		return message, nil
+	// 	}
+	// }
+
+	// return nil, errors.New("Cannot find message: " + name)
 }

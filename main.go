@@ -12,6 +12,13 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
+//  Mount marshalled protocol buffers as a FUSE filesystem.
+//  command line arguments:
+//		mount location
+//		marshalled protocol buffer
+//		descriptor .proto file
+// 		message name
+
 package main
 
 import (
