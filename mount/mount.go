@@ -12,12 +12,12 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package protofuse
+package mount
 
 import (
+	"fmt"
 	"log"
 	"strings"
-	"fmt"
 
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
@@ -39,21 +39,21 @@ func Mount(marshaled []byte, fileDesc *google_protobuf.FileDescriptorSet, messag
 	}
 	defer c.Close()
 
-  	desc := &google_protobuf.DescriptorProto{}
-  	desc, err = GetDescriptorProto(messageName, fileDesc)
-  	if err != nil {
-  		return err
-  	}
+	desc := &google_protobuf.DescriptorProto{}
+	desc, err = GetDescriptorProto(messageName, fileDesc)
+	if err != nil {
+		return err
+	}
 
-  	PT, err := unmarshal.Unmarshal(fileDesc, desc, [][]byte{marshaled})
-  	if err != nil {
-  		return err
-  	}
+	PT, err := unmarshal.Unmarshal(fileDesc, desc, [][]byte{marshaled})
+	if err != nil {
+		return err
+	}
 
-  	err = fs.Serve(c, PT)
-  	if err != nil {
-  		return err
-  	}
+	err = fs.Serve(c, PT)
+	if err != nil {
+		return err
+	}
 
 	// check if the mount process has an error to report
 	<-c.Ready
@@ -77,21 +77,21 @@ func MountList(marshaled [][]byte, fileDesc *google_protobuf.FileDescriptorSet, 
 	}
 	defer c.Close()
 
-  	desc := &google_protobuf.DescriptorProto{}
-  	desc, err = GetDescriptorProto(messageName, fileDesc)
-  	if err != nil {
-  		return err
-  	}
+	desc := &google_protobuf.DescriptorProto{}
+	desc, err = GetDescriptorProto(messageName, fileDesc)
+	if err != nil {
+		return err
+	}
 
-  	PT, err := unmarshal.Unmarshal(fileDesc, desc, marshaled)
-  	if err != nil {
-  		return err
-  	}
+	PT, err := unmarshal.Unmarshal(fileDesc, desc, marshaled)
+	if err != nil {
+		return err
+	}
 
-  	err = fs.Serve(c, PT)
-  	if err != nil {
-  		return err
-  	}
+	err = fs.Serve(c, PT)
+	if err != nil {
+		return err
+	}
 
 	// check if the mount process has an error to report
 	<-c.Ready
@@ -118,7 +118,7 @@ func GetDescriptorProto(name string, fileDesc *google_protobuf.FileDescriptorSet
 						for i := 3; i < slen; i++ {
 							for _, d := range m.GetNestedType() {
 								if d.GetName() == s[i] {
-									if i >= slen - 1 {
+									if i >= slen-1 {
 										return d, nil
 									}
 									m = d

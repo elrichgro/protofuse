@@ -16,14 +16,14 @@ package unmarshal
 
 import (
 	"bytes"
-	"strings"
-	"fmt"
-	"errors"
 	"encoding/binary"
+	"errors"
+	"fmt"
+	"strings"
 	"unsafe"
 
-	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"elrich/protofuse/fuse"
+	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 )
 
 var fileDesc *google_protobuf.FileDescriptorSet
@@ -57,37 +57,37 @@ func unmarshalMessage(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, 
 	dir := &pfuse.Dir{}
 	for buf.Len() != 0 {
 		tN := &pfuse.TreeNode{}
-	    wireType, fieldNumber, err := decodeKey(buf)
+		wireType, fieldNumber, err := decodeKey(buf)
 		if err != nil {
 			return err
 		}
-	    tN.FieldNumber = fieldNumber
+		tN.FieldNumber = fieldNumber
 
-	    if *desc.Field[fieldNumber-1].Label == google_protobuf.FieldDescriptorProto_LABEL_REPEATED {
-	    	m[fieldNumber] += 1
-	    	repNum = m[fieldNumber]
-	    } else {
-	    	repNum = 0
-	    }
+		if *desc.Field[fieldNumber-1].Label == google_protobuf.FieldDescriptorProto_LABEL_REPEATED {
+			m[fieldNumber] += 1
+			repNum = m[fieldNumber]
+		} else {
+			repNum = 0
+		}
 
-	    switch wireType {
-	    case 0:
-	    	err := unmarshal0(desc, buf, tN, repNum)
+		switch wireType {
+		case 0:
+			err := unmarshal0(desc, buf, tN, repNum)
 			if err != nil {
 				return err
 			}
-	    case 1:
-	    	err := unmarshal1(desc, buf, tN, repNum)
+		case 1:
+			err := unmarshal1(desc, buf, tN, repNum)
 			if err != nil {
 				return err
 			}
-	    case 2:
-	    	err := unmarshal2(desc, buf, tN, repNum)
+		case 2:
+			err := unmarshal2(desc, buf, tN, repNum)
 			if err != nil {
 				return err
 			}
-	    case 3:
-	    	err := unmarshal3(desc, buf, tN, repNum)
+		case 3:
+			err := unmarshal3(desc, buf, tN, repNum)
 			if err != nil {
 				return err
 			}
@@ -103,13 +103,13 @@ func unmarshalMessage(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, 
 			}
 		default:
 			return errors.New(fmt.Sprintf("Invalid wire type: %d\n", wireType))
-	    }
+		}
 		dir.Nodes = append(dir.Nodes, *tN)
-	} 
+	}
 
-  	// Set directory name
+	// Set directory name
 	if rN != 0 {
-		t.Name = fmt.Sprintf(desc.GetName() + "%d", rN)
+		t.Name = fmt.Sprintf(desc.GetName()+"%d", rN)
 	} else {
 		t.Name = desc.GetName()
 	}
@@ -119,12 +119,12 @@ func unmarshalMessage(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, 
 }
 
 func decodeKey(buf *bytes.Buffer) (int8, uint64, error) {
-  	x, n := binary.Uvarint(buf.Bytes())
-  	if n <= 0 {
-  		return 0, 0, fmt.Errorf("decodeVarint n = %d", n)
-  	}
-  	buf.Next(n)
-  	return int8(x & 7), x >> 3, nil
+	x, n := binary.Uvarint(buf.Bytes())
+	if n <= 0 {
+		return 0, 0, fmt.Errorf("decodeVarint n = %d", n)
+	}
+	buf.Next(n)
+	return int8(x & 7), x >> 3, nil
 }
 
 // func decodeVarint(buf *bytes.Buffer) uint64{
@@ -143,10 +143,10 @@ func decodeKey(buf *bytes.Buffer) (int8, uint64, error) {
 // }
 
 func unmarshal0(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfuse.TreeNode, rN int32) error {
-  	var field *google_protobuf.FieldDescriptorProto = desc.Field[t.FieldNumber-1]
+	var field *google_protobuf.FieldDescriptorProto = desc.Field[t.FieldNumber-1]
 	var contents string
 	if rN != 0 {
-		t.Name = fmt.Sprintf(*field.Name + "%d", rN)
+		t.Name = fmt.Sprintf(*field.Name+"%d", rN)
 	} else {
 		t.Name = *field.Name
 	}
@@ -155,49 +155,49 @@ func unmarshal0(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfu
 	switch *field.Type {
 	case google_protobuf.FieldDescriptorProto_TYPE_INT32:
 		x, n, err := decodeInt32(buf.Bytes())
-  		buf.Next(n)
+		buf.Next(n)
 		if err != nil {
 			return err
 		}
 		contents = fmt.Sprintf("%d\n", x)
 	case google_protobuf.FieldDescriptorProto_TYPE_INT64:
 		x, n, err := decodeInt64(buf.Bytes())
-  		buf.Next(n)
+		buf.Next(n)
 		if err != nil {
 			return err
 		}
 		contents = fmt.Sprintf("%d\n", x)
 	case google_protobuf.FieldDescriptorProto_TYPE_UINT32:
 		x, n, err := decodeUint32(buf.Bytes())
-  		buf.Next(n)
+		buf.Next(n)
 		if err != nil {
 			return err
 		}
 		contents = fmt.Sprintf("%d\n", x)
 	case google_protobuf.FieldDescriptorProto_TYPE_UINT64:
 		x, n, err := decodeUint64(buf.Bytes())
-  		buf.Next(n)
+		buf.Next(n)
 		if err != nil {
 			return err
 		}
 		contents = fmt.Sprintf("%d\n", x)
 	case google_protobuf.FieldDescriptorProto_TYPE_SINT32:
 		x, n, err := decodeSint32(buf.Bytes())
-  		buf.Next(n)
+		buf.Next(n)
 		if err != nil {
 			return err
 		}
 		contents = fmt.Sprintf("%d\n", x)
 	case google_protobuf.FieldDescriptorProto_TYPE_SINT64:
 		x, n, err := decodeSint64(buf.Bytes())
-  		buf.Next(n)
+		buf.Next(n)
 		if err != nil {
 			return err
 		}
 		contents = fmt.Sprintf("%d\n", x)
 	case google_protobuf.FieldDescriptorProto_TYPE_BOOL:
 		x, n, err := decodeBool(buf.Bytes())
-  		buf.Next(n)
+		buf.Next(n)
 		if err != nil {
 			return err
 		}
@@ -208,7 +208,7 @@ func unmarshal0(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfu
 		}
 	case google_protobuf.FieldDescriptorProto_TYPE_ENUM:
 		x, n, err := decodeUint64(buf.Bytes())
-  		buf.Next(n)
+		buf.Next(n)
 		if err != nil {
 			return err
 		}
@@ -221,15 +221,15 @@ func unmarshal0(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfu
 }
 
 func unmarshal1(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfuse.TreeNode, rN int32) error {
-  	var field *google_protobuf.FieldDescriptorProto = desc.Field[t.FieldNumber-1]
-  	p := make([]byte, 8)
-  	buf.Read(p)
-  	// Set file name
-  	if rN != 0 {
-  		t.Name = fmt.Sprintf(*field.Name + "%d", rN)
-  	} else {
-  		t.Name = *field.Name
-  	}
+	var field *google_protobuf.FieldDescriptorProto = desc.Field[t.FieldNumber-1]
+	p := make([]byte, 8)
+	buf.Read(p)
+	// Set file name
+	if rN != 0 {
+		t.Name = fmt.Sprintf(*field.Name+"%d", rN)
+	} else {
+		t.Name = *field.Name
+	}
 	t.Type = *field.Type
 
 	switch *field.Type {
@@ -258,44 +258,44 @@ func unmarshal1(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfu
 }
 
 func unmarshal2(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfuse.TreeNode, rN int32) error {
-  	len, n := binary.Uvarint(buf.Bytes())
-  	if n <= 0 {
-  		return fmt.Errorf("decodeVarint n = %d", n)
-  	}
-  	buf.Next(n)
-  	p := make([]byte, len)
-  	buf.Read(p)
-  	var field *google_protobuf.FieldDescriptorProto = desc.Field[t.FieldNumber-1]
-  	// Set file name
-  	if rN != 0 {
-  		t.Name = fmt.Sprintf(*field.Name + "%d", rN)
-  	} else {
-  		t.Name = *field.Name
-  	}
+	len, n := binary.Uvarint(buf.Bytes())
+	if n <= 0 {
+		return fmt.Errorf("decodeVarint n = %d", n)
+	}
+	buf.Next(n)
+	p := make([]byte, len)
+	buf.Read(p)
+	var field *google_protobuf.FieldDescriptorProto = desc.Field[t.FieldNumber-1]
+	// Set file name
+	if rN != 0 {
+		t.Name = fmt.Sprintf(*field.Name+"%d", rN)
+	} else {
+		t.Name = *field.Name
+	}
 	t.Type = *field.Type
 
-  	switch *field.Type {
-  	case google_protobuf.FieldDescriptorProto_TYPE_STRING:
-  		t.Node = &pfuse.File{string(p)}
-  	case google_protobuf.FieldDescriptorProto_TYPE_BYTES:
-  		var buffer bytes.Buffer
-  		for _, b := range p {
-  			buffer.WriteString(fmt.Sprintf(" %x", b))
-  		}
-  		t.Node = &pfuse.File{buffer.String()}
-  	case google_protobuf.FieldDescriptorProto_TYPE_MESSAGE:
-  		var messageName string = (*field.TypeName)
-  		messageDesc, err := GetDescriptorProto(messageName)
+	switch *field.Type {
+	case google_protobuf.FieldDescriptorProto_TYPE_STRING:
+		t.Node = &pfuse.File{string(p)}
+	case google_protobuf.FieldDescriptorProto_TYPE_BYTES:
+		var buffer bytes.Buffer
+		for _, b := range p {
+			buffer.WriteString(fmt.Sprintf(" %x", b))
+		}
+		t.Node = &pfuse.File{buffer.String()}
+	case google_protobuf.FieldDescriptorProto_TYPE_MESSAGE:
+		var messageName string = (*field.TypeName)
+		messageDesc, err := GetDescriptorProto(messageName)
 		if err != nil {
 			return err
 		}
-    	unmarshalMessage(messageDesc, bytes.NewBuffer(p), t, rN)
-    default:
-    	t.Node = &pfuse.File{string(p)}
-  	// Packed repeat types?
-  	}
+		unmarshalMessage(messageDesc, bytes.NewBuffer(p), t, rN)
+	default:
+		t.Node = &pfuse.File{string(p)}
+		// Packed repeat types?
+	}
 
-  	return nil
+	return nil
 }
 
 func unmarshal3(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfuse.TreeNode, rN int32) error {
@@ -308,14 +308,14 @@ func unmarshal4(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfu
 
 func unmarshal5(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfuse.TreeNode, rN int32) error {
 	var field *google_protobuf.FieldDescriptorProto = desc.Field[t.FieldNumber-1]
-  	p := make([]byte, 4)
-  	buf.Read(p)
-  	// Set file name
-  	if rN != 0 {
-  		t.Name = fmt.Sprintf(*field.Name + "%d", rN)
-  	} else {
-  		t.Name = *field.Name
-  	}
+	p := make([]byte, 4)
+	buf.Read(p)
+	// Set file name
+	if rN != 0 {
+		t.Name = fmt.Sprintf(*field.Name+"%d", rN)
+	} else {
+		t.Name = *field.Name
+	}
 	t.Type = *field.Type
 
 	switch *field.Type {
@@ -494,7 +494,7 @@ func GetDescriptorProto(name string) (*google_protobuf.DescriptorProto, error) {
 						for i := 3; i < slen; i++ {
 							for _, d := range m.GetNestedType() {
 								if d.GetName() == s[i] {
-									if i >= slen - 1 {
+									if i >= slen-1 {
 										return d, nil
 									}
 									m = d

@@ -21,7 +21,6 @@ package unmarshal
 // 	// "elrich/protofuse/fuse"
 // )
 
-
 // func compareProtoTree(pt1 *pfuse.ProtoTree, pt2 *pfuse.ProtoTree, t *testing.T) {
 // 	if len(*pt1.Dir) != len(*pt2.Dir) {
 // 		t.Error("ProtoTree.Dir lengths don't match")

@@ -15,9 +15,9 @@
 package pfuse
 
 import (
-	"os"
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
+	"os"
 
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 )
@@ -32,10 +32,10 @@ func (t *ProtoTree) Root() (fs.Node, fuse.Error) {
 
 // treeNode represents each node in the filesystem tree
 type TreeNode struct {
-	Name string
+	Name        string
 	FieldNumber uint64
-	Type google_protobuf.FieldDescriptorProto_Type
-	Node fs.Node
+	Type        google_protobuf.FieldDescriptorProto_Type
+	Node        fs.Node
 }
 
 // Dir implements both Node and Handle for the directories.
@@ -65,7 +65,7 @@ func (dir *Dir) ReadDir(intr fs.Intr) ([]fuse.Dirent, fuse.Error) {
 }
 
 // File implements both Node and Handle for the files.
-type File struct{
+type File struct {
 	Contents string
 }
 
