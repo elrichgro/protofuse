@@ -10,16 +10,10 @@ package main
 import (
 	"fmt"
 	"os"
-	"log"
 	"io"
-	"bytes"
-	"errors"
-
-	"bazil.org/fuse"
-	"bazil.org/fuse/fs"
 
 	"github.com/gogo/protobuf/parser"
-	"elrich/protofuse/unmarshal"
+	"elrich/protofuse/mount"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 )
 
@@ -34,19 +28,6 @@ func main() {
 
 	mountpoint := os.Args[1]
 
-	c, err := fuse.Mount(
-		mountpoint,
-		fuse.FSName("ProtoFuse"),
-		fuse.Subtype("protofuse"),
-		fuse.LocalVolume(),
-		fuse.VolumeName("ProtoFuse"),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer c.Close()
-
-	// Read protocol buffer and create buffer 
    	file, err := os.Open(os.Args[2])
    	CheckError(err)
 
@@ -57,58 +38,19 @@ func main() {
    	_, err = io.ReadFull(file, buf)
    	file.Close()
 
-   	// Read .proto file and generate FileDescriptorSet
    	filename := string(os.Args[3])
 
    	fileDescSet, err := parser.ParseFile(filename, ".")
   	CheckError(err)
-
-  	fileDesc = fileDescSet.File[0]
-
-  	// Get file descriptor proto
   	var messageName string = os.Args[4]
-  	desc := &google_protobuf.DescriptorProto{}
-  	desc, err = GetDescriptorProto(messageName, nil) // TODO: err = GetDescriptorProto(desc, messageName)
-  	CheckError(err)
 
-  	// Unmarshal the Protobuf
-  	PT, err := unmarshal.Unmarshal(fileDesc, desc, bytes.NewBuffer(buf))
-  	CheckError(err)
-
-  	// Start FUSE serve loop
-  	err = fs.Serve(c, PT)
-  	CheckError(err)
-
-	// check if the mount process has an error to report
-	<-c.Ready
-	if err := c.MountError; err != nil {
-		log.Fatal(err)
-	}
+	err = protofuse.Mount(buf, fileDescSet, messageName, mountpoint)
+	CheckError(err)
 }
 
-// copied from tutorial
 func CheckError(err error) {
    if err != nil {
        fmt.Println(err.Error())
        os.Exit(-1)
    }
-}
-
-func GetDescriptorProto(name string, messageDesc *google_protobuf.DescriptorProto) (*google_protobuf.DescriptorProto, error) {
-	if messageDesc != nil {
-		for _, message := range messageDesc.NestedType {
-			if *message.Name == name {
-				return message, nil
-			}
-		}
-	}
-
-	for _, message := range fileDesc.MessageType {
-		if *message.Name == name {
-			return message, nil
-		}
-	}
-
-	//TODO: throw error
-	return nil, errors.New("Cannot find message: " + name)
 }

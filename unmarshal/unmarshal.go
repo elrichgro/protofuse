@@ -15,12 +15,27 @@ import (
 
 var fileDesc *google_protobuf.FileDescriptorProto
 
-func Unmarshal(fDesc *google_protobuf.FileDescriptorProto, desc *google_protobuf.DescriptorProto, buf *bytes.Buffer) (*pfuse.ProtoTree, error) {
+func Unmarshal(fDesc *google_protobuf.FileDescriptorProto, desc *google_protobuf.DescriptorProto, buf [][]byte) (*pfuse.ProtoTree, error) {
 	fileDesc = fDesc
 	PT := &pfuse.ProtoTree{}
-	PT.Dir.Nodes = []pfuse.TreeNode{pfuse.TreeNode{}}
-	err := unmarshalMessage(desc, buf, &PT.Dir.Nodes[0], 0)
-	return PT, err
+	PT.Dir.Nodes = []pfuse.TreeNode{}
+
+	if len(buf) > 1 {
+		for i, buffer := range buf {
+			PT.Dir.Nodes = append(PT.Dir.Nodes, pfuse.TreeNode{})
+			err := unmarshalMessage(desc, bytes.NewBuffer(buffer), &PT.Dir.Nodes[i], int32(i+1))
+			if err != nil {
+				return nil, err
+			}
+		}
+	} else {
+		PT.Dir.Nodes = append(PT.Dir.Nodes, pfuse.TreeNode{})
+		err := unmarshalMessage(desc, bytes.NewBuffer(buf[0]), &PT.Dir.Nodes[0], 0)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return PT, nil
 }
 
 func unmarshalMessage(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfuse.TreeNode, rN int32) error {
