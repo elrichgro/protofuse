@@ -111,13 +111,6 @@ func unmarshalMessage(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, 
 		}
 		dir.Nodes = append(dir.Nodes, *tN)
 	}
-
-	// Set directory name
-	// if rN != 0 {
-	// 	t.Name = fmt.Sprintf(desc.GetName()+"%d", rN)
-	// } else {
-	// 	t.Name = desc.GetName()
-	// }
 	t.Node = dir
 
 	return nil
@@ -198,12 +191,26 @@ func unmarshal0(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfu
 			contents = "False"
 		}
 	case google_protobuf.FieldDescriptorProto_TYPE_ENUM:
+		e, err := GetEnumDescriptorProto(field.GetTypeName())
+		if err != nil {
+			return err
+		}
 		x, n, err := decodeUint64(buf.Bytes())
+		fmt.Println(x)
 		buf.Next(n)
 		if err != nil {
 			return err
 		}
-		contents = fmt.Sprintf("%d", x)
+		var found bool = false
+		for _, value := range e.GetValue() {
+			if uint64(value.GetNumber()) == x {
+				contents = value.GetName()
+				found = true
+			}
+		}
+		if !found {
+			return fmt.Errorf("Invalid enum value: %d, for enum: %s", x, e.GetName())
+		}
 	default:
 		return fmt.Errorf("Invalid wire type")
 	}
@@ -455,7 +462,7 @@ func GetDescriptorProto(name string) (*google_protobuf.DescriptorProto, error) {
 								}
 							}
 						}
-						return nil, fmt.Errorf("Cannot find message1: %s", name)
+						return nil, fmt.Errorf("Cannot find message: %s", name)
 					}
 				}
 			}
@@ -463,4 +470,49 @@ func GetDescriptorProto(name string) (*google_protobuf.DescriptorProto, error) {
 		return nil, fmt.Errorf("Cannot find message: %s", name)
 	}
 	return nil, fmt.Errorf("Message name not fully qualified: %s", name)
+}
+
+func GetEnumDescriptorProto(name string) (*google_protobuf.EnumDescriptorProto, error) {
+	if string(name[0]) == "." {
+		s := strings.Split(name, ".")
+		slen := len(s)
+		for _, file := range fileDesc.File {
+			if file.GetPackage() == s[1] {
+				if slen <= 3 {
+					return getEnum(s[2], file.GetEnumType())
+				}
+				for _, message := range file.MessageType {
+					if message.GetName() == s[2] {
+						if slen <= 4 {
+							return getEnum(s[3], message.GetEnumType())
+						}
+						var m *google_protobuf.DescriptorProto = message
+
+						for i := 3; i < slen-1; i++ {
+							for _, d := range m.GetNestedType() {
+								if d.GetName() == s[i] {
+									if i >= slen-2 {
+										return getEnum(s[slen-1], d.GetEnumType())
+									}
+									m = d
+								}
+							}
+						}
+						return nil, fmt.Errorf("Cannot find enum: %s", name)
+					}
+				}
+			}
+		}
+		return nil, fmt.Errorf("Cannot find enum: %s", name)
+	}
+	return nil, fmt.Errorf("Enum name not fully qualified: %s", name)
+}
+
+func getEnum(name string, enums []*google_protobuf.EnumDescriptorProto) (*google_protobuf.EnumDescriptorProto, error) {
+	for _, enum := range enums {
+		if enum.GetName() == name {
+			return enum, nil
+		}
+	}
+	return nil, fmt.Errorf("Cannot find enum: %s", name)
 }

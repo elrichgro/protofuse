@@ -29,7 +29,7 @@ message foo {
 	}
 
 	enum foobar {
-		e1 = 1;
+		e1 = 5;
 		e2 = 2;
 	}
 }
