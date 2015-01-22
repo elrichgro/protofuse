@@ -39,13 +39,7 @@ func Mount(marshaled []byte, fileDesc *google_protobuf.FileDescriptorSet, messag
 	}
 	defer c.Close()
 
-	desc := &google_protobuf.DescriptorProto{}
-	desc, err = GetDescriptorProto(messageName, fileDesc)
-	if err != nil {
-		return err
-	}
-
-	PT, err := unmarshal.Unmarshal(fileDesc, desc, [][]byte{marshaled})
+	PT, err := unmarshal.Unmarshal(fileDesc, messageName, [][]byte{marshaled})
 	if err != nil {
 		return err
 	}
@@ -77,13 +71,7 @@ func MountList(marshaled [][]byte, fileDesc *google_protobuf.FileDescriptorSet, 
 	}
 	defer c.Close()
 
-	desc := &google_protobuf.DescriptorProto{}
-	desc, err = GetDescriptorProto(messageName, fileDesc)
-	if err != nil {
-		return err
-	}
-
-	PT, err := unmarshal.Unmarshal(fileDesc, desc, marshaled)
+	PT, err := unmarshal.Unmarshal(fileDesc, messageName, marshaled)
 	if err != nil {
 		return err
 	}

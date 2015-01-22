@@ -35,6 +35,7 @@ type TreeNode struct {
 	Name        string
 	FieldNumber uint64
 	Type        google_protobuf.FieldDescriptorProto_Type
+	Label		google_protobuf.FieldDescriptorProto_Label
 	Node        fs.Node
 }
 

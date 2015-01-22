@@ -1,0 +1,39 @@
+package test;
+
+message foo {
+	required string f1 = 1;
+	optional int32 f2 = 2;
+	optional int64 f3 = 3;
+	optional uint32 f4 = 4;
+	optional uint64 f5 = 5;
+	optional sint32 f6 = 6;
+	optional bool f7 = 7;
+	optional fixed64 f8 = 8;
+	optional sfixed64 f9 = 9;
+	optional double f10 = 10;
+	optional bytes f11 = 11;
+	optional bar f12 = 12;
+	optional fixed32 f13 = 13;
+	optional sfixed32 f14 = 14;
+	optional float f15 = 15;
+	repeated baz f16 = 16;
+
+	message baz {
+		required string f1 = 1;
+		optional foobar f2 = 2;
+		optional foobaz f3 = 3;
+
+		message foobaz {
+			required string name = 1;
+		}
+	}
+
+	enum foobar {
+		e1 = 1;
+		e2 = 2;
+	}
+}
+
+message bar {
+	required int32 id = 1;
+}
