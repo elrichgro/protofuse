@@ -21,8 +21,8 @@ import (
 	"os"
 	"io"
 
-	"elrich/protofuse/unmarshal/test"
-	"elrich/protofuse/fuse"
+	"github.com/elrich/protofuse/unmarshal/test"
+	"github.com/elrich/protofuse/fuse"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
     "github.com/gogo/protobuf/proto"
 )

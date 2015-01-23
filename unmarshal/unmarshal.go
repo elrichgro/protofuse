@@ -23,7 +23,7 @@ import (
 	"strings"
 	"unsafe"
 
-	"elrich/protofuse/fuse"
+	"github.com/elrich/protofuse/fuse"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 )
 
@@ -87,44 +87,53 @@ func unmarshalMessage(msg *google_protobuf.DescriptorProto, buf *bytes.Buffer, t
 			repNum = 0
 		}
 
-		switch wireType {
-		case 0:
-			err := unmarshal0(field, buf, tN, repNum)
-			if err != nil {
-				return err
-			}
-		case 1:
-			err := unmarshal1(field, buf, tN, repNum)
-			if err != nil {
-				return err
-			}
-		case 2:
-			err := unmarshal2(field, buf, tN, repNum)
-			if err != nil {
-				return err
-			}
-		case 3:
-			err := unmarshal3(field, buf, tN, repNum)
-			if err != nil {
-				return err
-			}
-		case 4:
-			err := unmarshal4(field, buf, tN, repNum)
-			if err != nil {
-				return err
-			}
-		case 5:
-			err := unmarshal5(field, buf, tN, repNum)
-			if err != nil {
-				return err
-			}
-		default:
-			return errors.New(fmt.Sprintf("Invalid wire type: %d\n", wireType))
+		err = unmarshalField(wireType, field, buf, tN, repNum)
+		if err != nil {
+			return err
 		}
+
 		dir.Nodes = append(dir.Nodes, *tN)
 	}
 	t.Node = dir
 
+	return nil
+}
+
+func unmarshalField(wireType int8, field *google_protobuf.FieldDescriptorProto, buf *bytes.Buffer, tN *pfuse.TreeNode, repNum int32) error {
+	switch wireType {
+	case 0:
+		err := unmarshal0(field, buf, tN, repNum)
+		if err != nil {
+			return err
+		}
+	case 1:
+		err := unmarshal1(field, buf, tN, repNum)
+		if err != nil {
+			return err
+		}
+	case 2:
+		err := unmarshal2(field, buf, tN, repNum)
+		if err != nil {
+			return err
+		}
+	case 3:
+		err := unmarshal3(field, buf, tN, repNum)
+		if err != nil {
+			return err
+		}
+	case 4:
+		err := unmarshal4(field, buf, tN, repNum)
+		if err != nil {
+			return err
+		}
+	case 5:
+		err := unmarshal5(field, buf, tN, repNum)
+		if err != nil {
+			return err
+		}
+	default:
+		return errors.New(fmt.Sprintf("Invalid wire type: %d\n", wireType))
+	}
 	return nil
 }
 
@@ -297,7 +306,6 @@ func unmarshal2(field *google_protobuf.FieldDescriptorProto, buf *bytes.Buffer, 
 		unmarshalMessage(messageDesc, bytes.NewBuffer(p), t, packageName, rN)
 	default:
 		t.Node = &pfuse.File{string(p)}
-		// Packed repeat types?
 	}
 
 	return nil

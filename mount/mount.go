@@ -22,7 +22,7 @@ import (
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
 
-	"elrich/protofuse/unmarshal"
+	"github.com/elrich/protofuse/unmarshal"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 )
 
