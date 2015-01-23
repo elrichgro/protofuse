@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"os/signal"
+	"os"
 
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
@@ -38,6 +40,16 @@ func Mount(marshaled []byte, fileDesc *google_protobuf.FileDescriptorSet, packag
 		log.Fatal(err)
 	}
 	defer c.Close()
+
+	c1 := make(chan os.Signal, 1)
+	signal.Notify(c1, os.Interrupt)
+	go func(){
+    for sig := range c1 {
+    	log.Printf("captured %v, unmounting filesystem", sig)
+        fuse.Unmount(mountPoint)
+        os.Exit(1)
+    }
+	}()
 
 	PT, err := unmarshal.Unmarshal(fileDesc, packageName, messageName, [][]byte{marshaled})
 	if err != nil {
@@ -69,6 +81,16 @@ func MountList(marshaled [][]byte, fileDesc *google_protobuf.FileDescriptorSet, 
 	}
 	defer c.Close()
 
+	c1 := make(chan os.Signal, 1)
+	signal.Notify(c1, os.Interrupt)
+	go func(){
+    for sig := range c1 {
+    	log.Printf("captured %v, unmounting filesystem", sig)
+        fuse.Unmount(mountPoint)
+        os.Exit(1)
+    }
+	}()
+
 	PT, err := unmarshal.Unmarshal(fileDesc, packageName, messageName, marshaled)
 	if err != nil {
 		return err
@@ -85,6 +107,14 @@ func MountList(marshaled [][]byte, fileDesc *google_protobuf.FileDescriptorSet, 
 		log.Fatal(err)
 	}
 
+	return nil
+}
+
+func Unmount(dir string) error {
+	err := fuse.Unmount(dir)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
