@@ -23,7 +23,7 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/elrich/protofuse/fuse"
+	"github.com/elrichgro/protofuse/fuse"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 )
 

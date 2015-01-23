@@ -27,7 +27,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/elrich/protofuse/mount"
+	"github.com/elrichgro/protofuse/mount"
 	"github.com/gogo/protobuf/parser"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 )
