@@ -47,10 +47,11 @@ type f struct {
 }
 
 func TestUnmarshal(t *testing.T) {
-	name := "name"
+	names := []string{"name", "name2"}
 	id := int32(123)
 	f := f{"one", 2, 3, 4, 5, 6, true, 8, 9, 10.0, []byte{11, 11}, test.Bar{Id: &id}, 13, 14, 15.0,
-	[]*test.FooBaz{&test.FooBaz{F1: &name, F2: test.Foo_e1.Enum(), F3: &test.FooBazFoobaz{Name: &name}}}}
+	[]*test.FooBaz{&test.FooBaz{F1: &names[0], F2: test.Foo_e1.Enum(), F3: &test.FooBazFoobaz{Name: &names[0]}}, 
+		&test.FooBaz{F1: &names[1], F2: test.Foo_e2.Enum(), F3: &test.FooBazFoobaz{Name: &names[1]}}}}
 	foo := &test.Foo{F1:&f.F1, F2:&f.F2, F3:&f.F3, F4:&f.F4, F5:&f.F5, F6:&f.F6, F7:&f.F7, F8:&f.F8,
 		F9:&f.F9, F10:&f.F10, F11:f.F11, F12:&f.F12, F13:&f.F13, F14:&f.F14, F15:&f.F15, F16:f.F16}
 
@@ -91,7 +92,12 @@ func TestUnmarshal(t *testing.T) {
 	Label: google_protobuf.FieldDescriptorProto_LABEL_REQUIRED, Node:&pfuse.File{Contents:"name"}}, pfuse.TreeNode{Name:"f2", FieldNumber:2, Type: google_protobuf.FieldDescriptorProto_TYPE_ENUM, 
 	Label: google_protobuf.FieldDescriptorProto_LABEL_OPTIONAL, Node:&pfuse.File{Contents:"e1"}}, pfuse.TreeNode{Name:"f3", FieldNumber:3, Type: google_protobuf.FieldDescriptorProto_TYPE_MESSAGE, 
 	Label: google_protobuf.FieldDescriptorProto_LABEL_OPTIONAL, Node:&pfuse.Dir{[]pfuse.TreeNode{pfuse.TreeNode{Name:"name", FieldNumber:1, Type: google_protobuf.FieldDescriptorProto_TYPE_STRING, 
-	Label: google_protobuf.FieldDescriptorProto_LABEL_REQUIRED, Node: &pfuse.File{Contents:"name"}}}}}}}}}}}}}}
+	Label: google_protobuf.FieldDescriptorProto_LABEL_REQUIRED, Node: &pfuse.File{Contents:"name"}}}}}}}}, pfuse.TreeNode{Name:"f16_2", FieldNumber:16, Type: google_protobuf.FieldDescriptorProto_TYPE_MESSAGE, 
+	Label: google_protobuf.FieldDescriptorProto_LABEL_REPEATED, Node:&pfuse.Dir{[]pfuse.TreeNode{pfuse.TreeNode{Name:"f1", FieldNumber:1, Type: google_protobuf.FieldDescriptorProto_TYPE_STRING, 
+	Label: google_protobuf.FieldDescriptorProto_LABEL_REQUIRED, Node:&pfuse.File{Contents:"name2"}}, pfuse.TreeNode{Name:"f2", FieldNumber:2, Type: google_protobuf.FieldDescriptorProto_TYPE_ENUM, 
+	Label: google_protobuf.FieldDescriptorProto_LABEL_OPTIONAL, Node:&pfuse.File{Contents:"e2"}}, pfuse.TreeNode{Name:"f3", FieldNumber:3, Type: google_protobuf.FieldDescriptorProto_TYPE_MESSAGE, 
+	Label: google_protobuf.FieldDescriptorProto_LABEL_OPTIONAL, Node:&pfuse.Dir{[]pfuse.TreeNode{pfuse.TreeNode{Name:"name", FieldNumber:1, Type: google_protobuf.FieldDescriptorProto_TYPE_STRING, 
+	Label: google_protobuf.FieldDescriptorProto_LABEL_REQUIRED, Node: &pfuse.File{Contents:"name2"}}}}}}}}}}}}}}
 
 	compareProtoTree(PT1, PT2, t)
 }

@@ -33,7 +33,8 @@ func Unmarshal(fDesc *google_protobuf.FileDescriptorSet, messageName string, buf
 	fileDesc = fDesc
 	PT := &pfuse.ProtoTree{}
 	PT.Dir.Nodes = []pfuse.TreeNode{}
-	desc, err := GetDescriptorProto(messageName)
+	msg, err := getDescriptorProto(messageName)
+	packageName := strings.Split(messageName, ".")[1]
 	if err != nil {
 		return nil, err
 	}
@@ -41,14 +42,14 @@ func Unmarshal(fDesc *google_protobuf.FileDescriptorSet, messageName string, buf
 	if len(buf) > 1 {
 		for i, buffer := range buf {
 			PT.Dir.Nodes = append(PT.Dir.Nodes, pfuse.TreeNode{Name: fmt.Sprintf("Message_%d", i+1), FieldNumber: 0, Type: google_protobuf.FieldDescriptorProto_TYPE_MESSAGE})
-			err := unmarshalMessage(desc, bytes.NewBuffer(buffer), &PT.Dir.Nodes[i], int32(i+1))
+			err := unmarshalMessage(msg, bytes.NewBuffer(buffer), &PT.Dir.Nodes[i], packageName, int32(i+1))
 			if err != nil {
 				return nil, err
 			}
 		}
 	} else {
 		PT.Dir.Nodes = append(PT.Dir.Nodes, pfuse.TreeNode{Name: "Message_1", FieldNumber: 0, Type: google_protobuf.FieldDescriptorProto_TYPE_MESSAGE})
-		err := unmarshalMessage(desc, bytes.NewBuffer(buf[0]), &PT.Dir.Nodes[0], 0)
+		err := unmarshalMessage(msg, bytes.NewBuffer(buf[0]), &PT.Dir.Nodes[0], packageName, 0)
 		if err != nil {
 			return nil, err
 		}
@@ -56,9 +57,9 @@ func Unmarshal(fDesc *google_protobuf.FileDescriptorSet, messageName string, buf
 	return PT, nil
 }
 
-func unmarshalMessage(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfuse.TreeNode, rN int32) error {
+func unmarshalMessage(msg *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfuse.TreeNode, packageName string, rN int32) error {
 	var repNum int32 = 0
-	var m map[uint64]int32 = make(map[uint64]int32)
+	var m map[int32]int32 = make(map[int32]int32)
 	dir := &pfuse.Dir{}
 	for buf.Len() != 0 {
 		tN := &pfuse.TreeNode{}
@@ -68,7 +69,20 @@ func unmarshalMessage(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, 
 		}
 		tN.FieldNumber = fieldNumber
 
-		if *desc.GetField()[fieldNumber-1].Label == google_protobuf.FieldDescriptorProto_LABEL_REPEATED {
+		var field *google_protobuf.FieldDescriptorProto
+
+		if isExtension(msg, fieldNumber) {
+			// return fmt.Errorf("Extensions not yet supported")
+
+			_, field = fileDesc.FindExtensionByFieldNumber(packageName, msg.GetName(), fieldNumber)
+			if field == nil {
+				return fmt.Errorf("Could not find extension: %d, of message %s\n", fieldNumber, msg.GetName())
+			}
+		} else {
+			field = msg.GetField()[fieldNumber-1]
+		}
+
+		if field.GetLabel() == google_protobuf.FieldDescriptorProto_LABEL_REPEATED {
 			m[fieldNumber] += 1
 			repNum = m[fieldNumber]
 		} else {
@@ -77,32 +91,32 @@ func unmarshalMessage(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, 
 
 		switch wireType {
 		case 0:
-			err := unmarshal0(desc, buf, tN, repNum)
+			err := unmarshal0(field, buf, tN, repNum)
 			if err != nil {
 				return err
 			}
 		case 1:
-			err := unmarshal1(desc, buf, tN, repNum)
+			err := unmarshal1(field, buf, tN, repNum)
 			if err != nil {
 				return err
 			}
 		case 2:
-			err := unmarshal2(desc, buf, tN, repNum)
+			err := unmarshal2(field, buf, tN, repNum)
 			if err != nil {
 				return err
 			}
 		case 3:
-			err := unmarshal3(desc, buf, tN, repNum)
+			err := unmarshal3(field, buf, tN, repNum)
 			if err != nil {
 				return err
 			}
 		case 4:
-			err := unmarshal4(desc, buf, tN, repNum)
+			err := unmarshal4(field, buf, tN, repNum)
 			if err != nil {
 				return err
 			}
 		case 5:
-			err := unmarshal5(desc, buf, tN, repNum)
+			err := unmarshal5(field, buf, tN, repNum)
 			if err != nil {
 				return err
 			}
@@ -116,17 +130,16 @@ func unmarshalMessage(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, 
 	return nil
 }
 
-func decodeKey(buf *bytes.Buffer) (int8, uint64, error) {
+func decodeKey(buf *bytes.Buffer) (int8, int32, error) {
 	x, n := binary.Uvarint(buf.Bytes())
 	if n <= 0 {
 		return 0, 0, fmt.Errorf("decodeVarint n = %d", n)
 	}
 	buf.Next(n)
-	return int8(x & 7), x >> 3, nil
+	return int8(x & 7), int32(x >> 3), nil
 }
 
-func unmarshal0(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfuse.TreeNode, rN int32) error {
-	var field *google_protobuf.FieldDescriptorProto = desc.GetField()[t.FieldNumber-1]
+func unmarshal0(field *google_protobuf.FieldDescriptorProto, buf *bytes.Buffer, t *pfuse.TreeNode, rN int32) error {
 	var contents string
 	if rN != 0 {
 		t.Name = fmt.Sprintf(field.GetName()+"%d", rN)
@@ -191,7 +204,7 @@ func unmarshal0(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfu
 			contents = "False"
 		}
 	case google_protobuf.FieldDescriptorProto_TYPE_ENUM:
-		e, err := GetEnumDescriptorProto(field.GetTypeName())
+		e, err := getEnumDescriptorProto(field.GetTypeName())
 		if err != nil {
 			return err
 		}
@@ -218,8 +231,7 @@ func unmarshal0(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfu
 	return nil
 }
 
-func unmarshal1(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfuse.TreeNode, rN int32) error {
-	var field *google_protobuf.FieldDescriptorProto = desc.GetField()[t.FieldNumber-1]
+func unmarshal1(field *google_protobuf.FieldDescriptorProto, buf *bytes.Buffer, t *pfuse.TreeNode, rN int32) error {
 	p := make([]byte, 8)
 	buf.Read(p)
 	// Set file name
@@ -256,7 +268,7 @@ func unmarshal1(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfu
 	return nil
 }
 
-func unmarshal2(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfuse.TreeNode, rN int32) error {
+func unmarshal2(field *google_protobuf.FieldDescriptorProto, buf *bytes.Buffer, t *pfuse.TreeNode, rN int32) error {
 	len, n := binary.Uvarint(buf.Bytes())
 	if n <= 0 {
 		return fmt.Errorf("decodeVarint n = %d", n)
@@ -264,7 +276,6 @@ func unmarshal2(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfu
 	buf.Next(n)
 	p := make([]byte, len)
 	buf.Read(p)
-	var field *google_protobuf.FieldDescriptorProto = desc.GetField()[t.FieldNumber-1]
 	// Set file name
 	if rN != 0 {
 		t.Name = fmt.Sprintf(field.GetName()+"_%d", rN)
@@ -280,12 +291,13 @@ func unmarshal2(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfu
 	case google_protobuf.FieldDescriptorProto_TYPE_BYTES:
 		t.Node = &pfuse.File{hex.EncodeToString(p)}
 	case google_protobuf.FieldDescriptorProto_TYPE_MESSAGE:
-		var messageName string = (*field.TypeName)
-		messageDesc, err := GetDescriptorProto(messageName)
+		var messageName string = field.GetTypeName()
+		packageName := strings.Split(messageName, ".")[1]
+		messageDesc, err := getDescriptorProto(messageName)
 		if err != nil {
 			return err
 		}
-		unmarshalMessage(messageDesc, bytes.NewBuffer(p), t, rN)
+		unmarshalMessage(messageDesc, bytes.NewBuffer(p), t, packageName, rN)
 	default:
 		t.Node = &pfuse.File{string(p)}
 		// Packed repeat types?
@@ -294,16 +306,15 @@ func unmarshal2(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfu
 	return nil
 }
 
-func unmarshal3(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfuse.TreeNode, rN int32) error {
+func unmarshal3(field *google_protobuf.FieldDescriptorProto, buf *bytes.Buffer, t *pfuse.TreeNode, rN int32) error {
 	return errors.New("Groups are not supported")
 }
 
-func unmarshal4(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfuse.TreeNode, rN int32) error {
+func unmarshal4(field *google_protobuf.FieldDescriptorProto, buf *bytes.Buffer, t *pfuse.TreeNode, rN int32) error {
 	return errors.New("Groups are not supported")
 }
 
-func unmarshal5(desc *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfuse.TreeNode, rN int32) error {
-	var field *google_protobuf.FieldDescriptorProto = desc.GetField()[t.FieldNumber-1]
+func unmarshal5(field *google_protobuf.FieldDescriptorProto, buf *bytes.Buffer, t *pfuse.TreeNode, rN int32) error {
 	p := make([]byte, 4)
 	buf.Read(p)
 	// Set file name
@@ -439,7 +450,7 @@ func decodeSint64(buf []byte) (int64, int, error) {
 	return int64((v >> 1) ^ uint64((int64(v&1)<<63)>>63)), n, nil
 }
 
-func GetDescriptorProto(name string) (*google_protobuf.DescriptorProto, error) {
+func getDescriptorProto(name string) (*google_protobuf.DescriptorProto, error) {
 	if string(name[0]) == "." {
 		s := strings.Split(name, ".")
 		slen := len(s)
@@ -472,7 +483,7 @@ func GetDescriptorProto(name string) (*google_protobuf.DescriptorProto, error) {
 	return nil, fmt.Errorf("Message name not fully qualified: %s", name)
 }
 
-func GetEnumDescriptorProto(name string) (*google_protobuf.EnumDescriptorProto, error) {
+func getEnumDescriptorProto(name string) (*google_protobuf.EnumDescriptorProto, error) {
 	if string(name[0]) == "." {
 		s := strings.Split(name, ".")
 		slen := len(s)
@@ -515,4 +526,15 @@ func getEnum(name string, enums []*google_protobuf.EnumDescriptorProto) (*google
 		}
 	}
 	return nil, fmt.Errorf("Cannot find enum: %s", name)
+}
+
+func isExtension(msg *google_protobuf.DescriptorProto, fieldNumber int32) bool {
+	if len(msg.GetExtensionRange()) > 0 {
+		for _, r := range msg.GetExtensionRange() {
+			if fieldNumber >= r.GetStart() && fieldNumber <= r.GetEnd() {
+				return true
+			}
+		}
+	}
+	return false
 }
