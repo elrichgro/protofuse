@@ -25,5 +25,3 @@ that can be used to mount protocol buffers.
 `mountPoint` is the path to the location to mount the filesystem
 
 
-Protofuse has limited functionality at the moment and does not yet support extensions.
-
