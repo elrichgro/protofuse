@@ -26,7 +26,7 @@ import (
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 )
 
-func Mount(marshaled []byte, fileDesc *google_protobuf.FileDescriptorSet, messageName string, mountPoint string) error {
+func Mount(marshaled []byte, fileDesc *google_protobuf.FileDescriptorSet, packageName string, messageName string, mountPoint string) error {
 	c, err := fuse.Mount(
 		mountPoint,
 		fuse.FSName("protofuse"),
@@ -39,7 +39,7 @@ func Mount(marshaled []byte, fileDesc *google_protobuf.FileDescriptorSet, messag
 	}
 	defer c.Close()
 
-	PT, err := unmarshal.Unmarshal(fileDesc, messageName, [][]byte{marshaled})
+	PT, err := unmarshal.Unmarshal(fileDesc, packageName, messageName, [][]byte{marshaled})
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func Mount(marshaled []byte, fileDesc *google_protobuf.FileDescriptorSet, messag
 	return nil
 }
 
-func MountList(marshaled [][]byte, fileDesc *google_protobuf.FileDescriptorSet, messageName string, mountPoint string) error {
+func MountList(marshaled [][]byte, fileDesc *google_protobuf.FileDescriptorSet, packageName string, messageName string, mountPoint string) error {
 	c, err := fuse.Mount(
 		mountPoint,
 		fuse.FSName("protofuse"),
@@ -69,7 +69,7 @@ func MountList(marshaled [][]byte, fileDesc *google_protobuf.FileDescriptorSet, 
 	}
 	defer c.Close()
 
-	PT, err := unmarshal.Unmarshal(fileDesc, messageName, marshaled)
+	PT, err := unmarshal.Unmarshal(fileDesc, packageName, messageName, marshaled)
 	if err != nil {
 		return err
 	}

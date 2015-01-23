@@ -36,8 +36,8 @@ var fileDesc *google_protobuf.FileDescriptorProto
 
 func main() {
 
-	if len(os.Args) != 5 {
-		fmt.Printf("Usage: %s MOUNT_LOCATION, MARSHALLED_PROTOCOL_BUFFER, PROTO_FILE_LOCATION, MESSAGE_NAME\n", os.Args[0])
+	if len(os.Args) != 6 {
+		fmt.Printf("Usage: %s MOUNT_LOCATION, MARSHALLED_PROTOCOL_BUFFER, PROTO_FILE_LOCATION, PACKAGE_NAME, MESSAGE_NAME\n", os.Args[0])
 		os.Exit(-1)
 	}
 
@@ -57,9 +57,10 @@ func main() {
 
 	fileDescSet, err := parser.ParseFile(filename, filename[:strings.LastIndex(filename, "/")])
 	CheckError(err)
-	var messageName string = os.Args[4]
+	var packageName string = os.Args[4]
+	var messageName string = os.Args[5]
 
-	err = mount.Mount(buf, fileDescSet, messageName, mountpoint)
+	err = mount.Mount(buf, fileDescSet, packageName, messageName, mountpoint)
 	CheckError(err)
 }
 

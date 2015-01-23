@@ -29,14 +29,13 @@ import (
 
 var fileDesc *google_protobuf.FileDescriptorSet
 
-func Unmarshal(fDesc *google_protobuf.FileDescriptorSet, messageName string, buf [][]byte) (*pfuse.ProtoTree, error) {
+func Unmarshal(fDesc *google_protobuf.FileDescriptorSet, packageName string, messageName string, buf [][]byte) (*pfuse.ProtoTree, error) {
 	fileDesc = fDesc
 	PT := &pfuse.ProtoTree{}
 	PT.Dir.Nodes = []pfuse.TreeNode{}
-	msg, err := getDescriptorProto(messageName)
-	packageName := strings.Split(messageName, ".")[1]
-	if err != nil {
-		return nil, err
+	msg := fileDesc.GetMessage(packageName, messageName)
+	if msg == nil {
+		return nil, fmt.Errorf("Could not find message %s in package %s\n", messageName, packageName)
 	}
 
 	if len(buf) > 1 {

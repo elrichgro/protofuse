@@ -75,7 +75,7 @@ func TestUnmarshal(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	PT1, err := Unmarshal(fDesc, ".test.foo", [][]byte{buf})
+	PT1, err := Unmarshal(fDesc, "test", "foo", [][]byte{buf})
 	if err != nil {
 		t.Fatal(err)
 	}
