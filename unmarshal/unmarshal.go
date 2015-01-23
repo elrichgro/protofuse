@@ -77,7 +77,8 @@ func unmarshalMessage(msg *google_protobuf.DescriptorProto, buf *bytes.Buffer, t
 				return fmt.Errorf("Could not find extension: %d, of message %s\n", fieldNumber, msg.GetName())
 			}
 		} else {
-			field = msg.GetField()[fieldNumber-1]
+			field, err = getField(msg, fieldNumber)
+			// field = msg.GetField()[fieldNumber-1]
 		}
 
 		if field.GetLabel() == google_protobuf.FieldDescriptorProto_LABEL_REPEATED {
@@ -542,4 +543,13 @@ func isExtension(msg *google_protobuf.DescriptorProto, fieldNumber int32) bool {
 		}
 	}
 	return false
+}
+
+func getField(msg *google_protobuf.DescriptorProto, fieldNumber int32) (*google_protobuf.FieldDescriptorProto, error) {
+	for _, field := range msg.GetField() {
+		if field.GetNumber() == fieldNumber {
+			return field, nil
+		}
+	}
+	return nil, fmt.Errorf("Could not find field %d in message %s\n", fieldNumber, msg.GetName())
 }
