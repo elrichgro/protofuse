@@ -29,10 +29,10 @@ import (
 func Mount(marshaled []byte, fileDesc *google_protobuf.FileDescriptorSet, messageName string, mountPoint string) error {
 	c, err := fuse.Mount(
 		mountPoint,
-		fuse.FSName("ProtoFuse"),
-		fuse.Subtype("protofuse"),
+		fuse.FSName("protofuse"),
+		fuse.Subtype("protofs"),
 		fuse.LocalVolume(),
-		fuse.VolumeName("ProtoFuse"),
+		fuse.VolumeName("ProtoFS"),
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -43,12 +43,10 @@ func Mount(marshaled []byte, fileDesc *google_protobuf.FileDescriptorSet, messag
 	if err != nil {
 		return err
 	}
-
 	err = fs.Serve(c, PT)
 	if err != nil {
 		return err
 	}
-
 	// check if the mount process has an error to report
 	<-c.Ready
 	if err := c.MountError; err != nil {
@@ -61,10 +59,10 @@ func Mount(marshaled []byte, fileDesc *google_protobuf.FileDescriptorSet, messag
 func MountList(marshaled [][]byte, fileDesc *google_protobuf.FileDescriptorSet, messageName string, mountPoint string) error {
 	c, err := fuse.Mount(
 		mountPoint,
-		fuse.FSName("ProtoFuse"),
-		fuse.Subtype("protofuse"),
+		fuse.FSName("protofuse"),
+		fuse.Subtype("protofs"),
 		fuse.LocalVolume(),
-		fuse.VolumeName("ProtoFuse"),
+		fuse.VolumeName("ProtoFS"),
 	)
 	if err != nil {
 		log.Fatal(err)

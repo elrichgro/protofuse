@@ -6,6 +6,8 @@ To use protofuse:
 
 `$ protofuse 'path of mount location' 'marshaled protocol buffer' 'path to .proto file' 'message name'`
 
+`message name` is in the form .'package name'.'Message name'
+
 protofuse/mount/mount.go also contains functions
 
 `Mount(marshaled []byte, fileDesc *google_protobuf.FileDescriptorSet, messageName string, mountPoint string) error`

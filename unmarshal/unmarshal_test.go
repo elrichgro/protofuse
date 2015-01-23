@@ -47,11 +47,6 @@ type f struct {
 }
 
 func TestUnmarshal(t *testing.T) {
-
-	// name := "Baz"
-	// baz2 := &test.Baz2{}
-	// baz2.Name = &name
-	// proto.SetExtension(baz2, test.E_Number, 15)
 	name := "BAR"
 	names := []string{"name", "name2"}
 	id := int32(123)
