@@ -55,28 +55,43 @@ func (x *FooFoobar) UnmarshalJSON(data []byte) error {
 }
 
 type Foo struct {
-	F1               *string   `protobuf:"bytes,1,req,name=f1" json:"f1,omitempty"`
-	F2               *int32    `protobuf:"varint,2,opt,name=f2" json:"f2,omitempty"`
-	F3               *int64    `protobuf:"varint,3,opt,name=f3" json:"f3,omitempty"`
-	F4               *uint32   `protobuf:"varint,4,opt,name=f4" json:"f4,omitempty"`
-	F5               *uint64   `protobuf:"varint,5,opt,name=f5" json:"f5,omitempty"`
-	F6               *int32    `protobuf:"zigzag32,6,opt,name=f6" json:"f6,omitempty"`
-	F7               *bool     `protobuf:"varint,7,opt,name=f7" json:"f7,omitempty"`
-	F8               *uint64   `protobuf:"fixed64,8,opt,name=f8" json:"f8,omitempty"`
-	F9               *int64    `protobuf:"fixed64,9,opt,name=f9" json:"f9,omitempty"`
-	F10              *float64  `protobuf:"fixed64,10,opt,name=f10" json:"f10,omitempty"`
-	F11              []byte    `protobuf:"bytes,11,opt,name=f11" json:"f11,omitempty"`
-	F12              *Bar      `protobuf:"bytes,12,opt,name=f12" json:"f12,omitempty"`
-	F13              *uint32   `protobuf:"fixed32,13,opt,name=f13" json:"f13,omitempty"`
-	F14              *int32    `protobuf:"fixed32,14,opt,name=f14" json:"f14,omitempty"`
-	F15              *float32  `protobuf:"fixed32,15,opt,name=f15" json:"f15,omitempty"`
-	F16              []*FooBaz `protobuf:"bytes,16,rep,name=f16" json:"f16,omitempty"`
-	XXX_unrecognized []byte    `json:"-"`
+	F1               *string                   `protobuf:"bytes,1,req,name=f1" json:"f1,omitempty"`
+	F2               *int32                    `protobuf:"varint,2,opt,name=f2" json:"f2,omitempty"`
+	F3               *int64                    `protobuf:"varint,3,opt,name=f3" json:"f3,omitempty"`
+	F4               *uint32                   `protobuf:"varint,4,opt,name=f4" json:"f4,omitempty"`
+	F5               *uint64                   `protobuf:"varint,5,opt,name=f5" json:"f5,omitempty"`
+	F6               *int32                    `protobuf:"zigzag32,6,opt,name=f6" json:"f6,omitempty"`
+	F7               *bool                     `protobuf:"varint,7,opt,name=f7" json:"f7,omitempty"`
+	F8               *uint64                   `protobuf:"fixed64,8,opt,name=f8" json:"f8,omitempty"`
+	F9               *int64                    `protobuf:"fixed64,9,opt,name=f9" json:"f9,omitempty"`
+	F10              *float64                  `protobuf:"fixed64,10,opt,name=f10" json:"f10,omitempty"`
+	F11              []byte                    `protobuf:"bytes,11,opt,name=f11" json:"f11,omitempty"`
+	F12              *Bar                      `protobuf:"bytes,12,opt,name=f12" json:"f12,omitempty"`
+	F13              *uint32                   `protobuf:"fixed32,13,opt,name=f13" json:"f13,omitempty"`
+	F14              *int32                    `protobuf:"fixed32,14,opt,name=f14" json:"f14,omitempty"`
+	F15              *float32                  `protobuf:"fixed32,15,opt,name=f15" json:"f15,omitempty"`
+	F16              []*FooBaz                 `protobuf:"bytes,16,rep,name=f16" json:"f16,omitempty"`
+	XXX_extensions   map[int32]proto.Extension `json:"-"`
+	XXX_unrecognized []byte                    `json:"-"`
 }
 
 func (m *Foo) Reset()         { *m = Foo{} }
 func (m *Foo) String() string { return proto.CompactTextString(m) }
 func (*Foo) ProtoMessage()    {}
+
+var extRange_Foo = []proto.ExtensionRange{
+	{110, 130},
+}
+
+func (*Foo) ExtensionRangeArray() []proto.ExtensionRange {
+	return extRange_Foo
+}
+func (m *Foo) ExtensionMap() map[int32]proto.Extension {
+	if m.XXX_extensions == nil {
+		m.XXX_extensions = make(map[int32]proto.Extension)
+	}
+	return m.XXX_extensions
+}
 
 func (m *Foo) GetF1() string {
 	if m != nil && m.F1 != nil {
@@ -239,13 +254,28 @@ func (m *FooBazFoobaz) GetName() string {
 }
 
 type Bar struct {
-	Id               *int32 `protobuf:"varint,1,req,name=id" json:"id,omitempty"`
-	XXX_unrecognized []byte `json:"-"`
+	Id               *int32                    `protobuf:"varint,1,req,name=id" json:"id,omitempty"`
+	XXX_extensions   map[int32]proto.Extension `json:"-"`
+	XXX_unrecognized []byte                    `json:"-"`
 }
 
 func (m *Bar) Reset()         { *m = Bar{} }
 func (m *Bar) String() string { return proto.CompactTextString(m) }
 func (*Bar) ProtoMessage()    {}
+
+var extRange_Bar = []proto.ExtensionRange{
+	{100, 120},
+}
+
+func (*Bar) ExtensionRangeArray() []proto.ExtensionRange {
+	return extRange_Bar
+}
+func (m *Bar) ExtensionMap() map[int32]proto.Extension {
+	if m.XXX_extensions == nil {
+		m.XXX_extensions = make(map[int32]proto.Extension)
+	}
+	return m.XXX_extensions
+}
 
 func (m *Bar) GetId() int32 {
 	if m != nil && m.Id != nil {
@@ -254,6 +284,24 @@ func (m *Bar) GetId() int32 {
 	return 0
 }
 
+var E_Name = &proto.ExtensionDesc{
+	ExtendedType:  (*Bar)(nil),
+	ExtensionType: (*string)(nil),
+	Field:         100,
+	Name:          "test.name",
+	Tag:           "bytes,100,opt,name=name",
+}
+
+var E_F121 = &proto.ExtensionDesc{
+	ExtendedType:  (*Foo)(nil),
+	ExtensionType: (*int32)(nil),
+	Field:         121,
+	Name:          "test.f121",
+	Tag:           "varint,121,opt,name=f121",
+}
+
 func init() {
 	proto.RegisterEnum("test.FooFoobar", FooFoobar_name, FooFoobar_value)
+	proto.RegisterExtension(E_Name)
+	proto.RegisterExtension(E_F121)
 }

@@ -33,7 +33,7 @@ func (t *ProtoTree) Root() (fs.Node, fuse.Error) {
 // treeNode represents each node in the filesystem tree
 type TreeNode struct {
 	Name        string
-	FieldNumber uint64
+	FieldNumber int32
 	Type        google_protobuf.FieldDescriptorProto_Type
 	Label		google_protobuf.FieldDescriptorProto_Label
 	Node        fs.Node

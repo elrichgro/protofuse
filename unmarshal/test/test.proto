@@ -18,6 +18,8 @@ message foo {
 	optional float f15 = 15;
 	repeated baz f16 = 16;
 
+	extensions 110 to 130;
+
 	message baz {
 		required string f1 = 1;
 		optional foobar f2 = 2;
@@ -36,4 +38,14 @@ message foo {
 
 message bar {
 	required int32 id = 1;
+
+	extensions 100 to 120;
+}
+
+extend bar {
+	optional string name = 100;
+}
+
+extend foo {
+	optional int32 f121 = 121;
 }

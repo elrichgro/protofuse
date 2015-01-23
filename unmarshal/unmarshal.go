@@ -72,8 +72,6 @@ func unmarshalMessage(msg *google_protobuf.DescriptorProto, buf *bytes.Buffer, t
 		var field *google_protobuf.FieldDescriptorProto
 
 		if isExtension(msg, fieldNumber) {
-			// return fmt.Errorf("Extensions not yet supported")
-
 			_, field = fileDesc.FindExtensionByFieldNumber(packageName, msg.GetName(), fieldNumber)
 			if field == nil {
 				return fmt.Errorf("Could not find extension: %d, of message %s\n", fieldNumber, msg.GetName())
@@ -209,7 +207,6 @@ func unmarshal0(field *google_protobuf.FieldDescriptorProto, buf *bytes.Buffer, 
 			return err
 		}
 		x, n, err := decodeUint64(buf.Bytes())
-		fmt.Println(x)
 		buf.Next(n)
 		if err != nil {
 			return err
