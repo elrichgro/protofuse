@@ -86,13 +86,37 @@ func unmarshalMessage(msg *google_protobuf.DescriptorProto, buf *bytes.Buffer, t
 		} else {
 			repNum = 0
 		}
-
-		err = unmarshalField(wireType, field, buf, tN, repNum)
-		if err != nil {
-			return err
+		var packed bool = false
+		if field.GetOptions() != nil {
+			if field.GetOptions().GetPacked() {
+				packed = true
+			}
 		}
 
-		dir.Nodes = append(dir.Nodes, *tN)
+		if packed {
+			len, n := binary.Uvarint(buf.Bytes())
+			if n <= 0 {
+				return fmt.Errorf("decodeVarint n = %d", n)
+			}
+			buf.Next(n)
+			p := bytes.NewBuffer(buf.Next(int(len)))
+			for p.Len() != 0 {
+				tN = &pfuse.TreeNode{}
+				err = unmarshalPacked(field, p, tN, repNum)
+				if err != nil {
+					return err
+				}
+				m[fieldNumber] += 1
+				repNum = m[fieldNumber]
+				dir.Nodes = append(dir.Nodes, *tN)
+			}
+		} else {
+			err = unmarshalField(wireType, field, buf, tN, repNum)
+			if err != nil {
+				return err
+			}
+			dir.Nodes = append(dir.Nodes, *tN)
+		}
 	}
 	t.Node = dir
 
@@ -149,7 +173,7 @@ func decodeKey(buf *bytes.Buffer) (int8, int32, error) {
 func unmarshal0(field *google_protobuf.FieldDescriptorProto, buf *bytes.Buffer, t *pfuse.TreeNode, rN int32) error {
 	var contents string
 	if rN != 0 {
-		t.Name = fmt.Sprintf(field.GetName()+"%d", rN)
+		t.Name = fmt.Sprintf(field.GetName()+"_%d", rN)
 	} else {
 		t.Name = field.GetName()
 	}
@@ -354,6 +378,28 @@ func unmarshal5(field *google_protobuf.FieldDescriptorProto, buf *bytes.Buffer, 
 		t.Node = &pfuse.File{fmt.Sprintf("%x", p)}
 	}
 
+	return nil
+}
+
+func unmarshalPacked(field *google_protobuf.FieldDescriptorProto, buf *bytes.Buffer, t *pfuse.TreeNode, rN int32) error {
+	ft := field.GetType()
+	if ft == google_protobuf.FieldDescriptorProto_TYPE_INT32 || ft == google_protobuf.FieldDescriptorProto_TYPE_INT64 ||
+		ft == google_protobuf.FieldDescriptorProto_TYPE_UINT32 || ft == google_protobuf.FieldDescriptorProto_TYPE_UINT64 ||
+		ft == google_protobuf.FieldDescriptorProto_TYPE_SINT32 || ft == google_protobuf.FieldDescriptorProto_TYPE_SINT64 ||
+		ft == google_protobuf.FieldDescriptorProto_TYPE_BOOL || ft == google_protobuf.FieldDescriptorProto_TYPE_ENUM {
+			t.FieldNumber = field.GetNumber()
+			unmarshal0(field, buf, t, rN)
+	} else if ft == google_protobuf.FieldDescriptorProto_TYPE_FIXED64 || ft == google_protobuf.FieldDescriptorProto_TYPE_SFIXED64 ||
+		ft == google_protobuf.FieldDescriptorProto_TYPE_DOUBLE {
+			t.FieldNumber = field.GetNumber()
+			unmarshal1(field, buf, t, rN)
+	} else if ft == google_protobuf.FieldDescriptorProto_TYPE_FIXED32 || ft == google_protobuf.FieldDescriptorProto_TYPE_SFIXED32 ||
+		ft == google_protobuf.FieldDescriptorProto_TYPE_FLOAT {
+			t.FieldNumber = field.GetNumber()
+			unmarshal5(field, buf, t, rN)
+	} else {
+		return fmt.Errorf("Invalid packed type\n")
+	}
 	return nil
 }
 

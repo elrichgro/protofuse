@@ -56,7 +56,7 @@ func (x *FooFoobar) UnmarshalJSON(data []byte) error {
 
 type Foo struct {
 	F1               *string                   `protobuf:"bytes,1,req,name=f1" json:"f1,omitempty"`
-	F2               *int32                    `protobuf:"varint,2,opt,name=f2" json:"f2,omitempty"`
+	F2               []int32                   `protobuf:"varint,2,rep,packed,name=f2" json:"f2,omitempty"`
 	F3               *int64                    `protobuf:"varint,3,opt,name=f3" json:"f3,omitempty"`
 	F4               *uint32                   `protobuf:"varint,4,opt,name=f4" json:"f4,omitempty"`
 	F5               *uint64                   `protobuf:"varint,5,opt,name=f5" json:"f5,omitempty"`
@@ -100,11 +100,11 @@ func (m *Foo) GetF1() string {
 	return ""
 }
 
-func (m *Foo) GetF2() int32 {
-	if m != nil && m.F2 != nil {
-		return *m.F2
+func (m *Foo) GetF2() []int32 {
+	if m != nil {
+		return m.F2
 	}
-	return 0
+	return nil
 }
 
 func (m *Foo) GetF3() int64 {
