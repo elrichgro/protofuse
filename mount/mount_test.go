@@ -1,15 +1,22 @@
 package mount
 
 import (
+	// "os/exec"
+	"time"
 	"testing"
 	"github.com/elrichgro/protofuse/test"
 )
 
-func TestMount(t *testing.T) {
+func TestInvalidMount(t *testing.T) {
 	err := Mount(nil, nil, "", "", "invalid_mount_point")
 	if err == nil {
 		t.FailNow()
 	}
+}
+
+func TestUnmount(t *testing.T) {
+	c := make(chan bool)
+	var mountpoint string = "../test/mp"
 
 	buf, fDesc, packageName, messageName, err := test.GenerateFull()
 	if err != nil {
@@ -17,13 +24,19 @@ func TestMount(t *testing.T) {
 	}
 
 	go func() {
-		err = Mount(buf, fDesc, packageName, messageName, "../test/mp")
+		err = Mount(buf, fDesc, packageName, messageName, mountpoint)
 		if err != nil {
 			t.Fatal(err)
 		}
+		c <- true
 	}()	
-	err = Unmount("../test/mp")
+	time.Sleep(100*time.Millisecond)
+	err = Unmount(mountpoint)
 	if err != nil {
 		t.Fatal(err)
+	}
+	unmounted := <-c
+	if !unmounted {
+		t.Fail()
 	}
 }

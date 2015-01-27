@@ -48,9 +48,8 @@ func Mount(marshaled []byte, fileDesc *google_protobuf.FileDescriptorSet, packag
     	log.Printf("captured %v, unmounting filesystem", sig)
         defer os.Exit(1)
         err = fuse.Unmount(mountPoint)
-        log.Printf("Unmount: %v", err)
 		if err != nil {
-			log.Fatal(err)
+			log.Panic(err)
 		}
     }
 	}()
@@ -92,9 +91,8 @@ func MountList(marshaled [][]byte, fileDesc *google_protobuf.FileDescriptorSet, 
     	log.Printf("captured %v, unmounting filesystem", sig)
         err = fuse.Unmount(mountPoint)
 		if err != nil {
-			log.Fatal(err)
+			log.Panic(err)
 		}
-        os.Exit(1)
     }
 	}()
 
