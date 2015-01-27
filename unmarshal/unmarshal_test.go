@@ -18,64 +18,20 @@ import (
 	"testing"
 	"reflect"
 	"fmt"
-	"os"
-	"io"
 
-	"github.com/elrichgro/protofuse/unmarshal/test"
 	"github.com/elrichgro/protofuse/fuse"
+	"github.com/elrichgro/protofuse/test"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
-    "github.com/gogo/protobuf/proto"
 )
 
-type f struct {
-	F1 string 
-	F2 []int32
-	F3 int64 
-	F4 uint32 
-	F5 uint64 
-	F6 int32
-	F7 bool
-	F8 uint64 
-	F9 int64 
-	F10 float64 
-	F11 []byte 
-	F12 test.Bar
-	F13 uint32 
-	F14 int32 
-	F15 float32
-	F16 []*test.FooBaz
-}
-
 func TestUnmarshal(t *testing.T) {
-	name := "BAR"
-	names := []string{"name", "name2"}
-	id := int32(123)
-	f := f{"one", []int32{1, 2, 3, 4}, 3, 4, 5, 6, true, 8, 9, 10.0, []byte{11, 11}, test.Bar{Id: &id}, 13, 14, 15.0,
-	[]*test.FooBaz{&test.FooBaz{F1: &names[0], F2: test.Foo_e1.Enum(), F3: &test.FooBazFoobaz{Name: &names[0]}}, 
-		&test.FooBaz{F1: &names[1], F2: test.Foo_e2.Enum(), F3: &test.FooBazFoobaz{Name: &names[1]}}}}
-	foo := &test.Foo{F1:&f.F1, F2:f.F2, F3:&f.F3, F4:&f.F4, F5:&f.F5, F6:&f.F6, F7:&f.F7, F8:&f.F8,
-		F9:&f.F9, F10:&f.F10, F11:f.F11, F12:&f.F12, F13:&f.F13, F14:&f.F14, F15:&f.F15, F16:f.F16}
 
-	err := proto.SetExtension(foo.GetF12(), test.E_Name, &name)
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = proto.SetExtension(foo, test.E_F121, &id)
+	buf, fDesc, packageName, messageName, err := test.GenerateFull()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	buf, err := proto.Marshal(foo)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	fDesc, err := getFileDescriptorSet("./test/test.desc")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	PT1, err := Unmarshal(fDesc, "test", "foo", [][]byte{buf})
+	PT1, err := Unmarshal(fDesc, packageName, messageName, [][]byte{buf})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -115,33 +71,6 @@ func TestUnmarshal(t *testing.T) {
 	Label: google_protobuf.FieldDescriptorProto_LABEL_REQUIRED, Node:&pfuse.File{Contents:"name2"}}}}}}}}}}}}}}
 
 	compareProtoTree(PT1, PT2, t)
-}
-
-func getFileDescriptorSet(filename string) (*google_protobuf.FileDescriptorSet, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-
-	fi, err := file.Stat()
-	if err != nil {
-		return nil, err
-	}
-
-	buffer := make([]byte, fi.Size())
-	_, err = io.ReadFull(file, buffer)
-	if err != nil {
-		return nil, err
-	}
-	file.Close()
-
-	fDesc := &google_protobuf.FileDescriptorSet{}
-	err = proto.Unmarshal(buffer, fDesc)
-	if err != nil {
-		return nil, err
-	}
-
-	return fDesc, nil
 }
 
 func compareProtoTree(pt1 *pfuse.ProtoTree, pt2 *pfuse.ProtoTree, t *testing.T) {
