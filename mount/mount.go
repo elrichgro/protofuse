@@ -40,7 +40,7 @@ func Mount(marshaled []byte, fileDesc *google_protobuf.FileDescriptorSet, packag
 		fuse.VolumeName("ProtoFS"),
 	)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer c.Close()
 
@@ -72,7 +72,7 @@ func Mount(marshaled []byte, fileDesc *google_protobuf.FileDescriptorSet, packag
 	// check if the mount process has an error to report
 	<-c.Ready
 	if err := c.MountError; err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	return nil
@@ -89,7 +89,7 @@ func MountList(marshaled [][]byte, fileDesc *google_protobuf.FileDescriptorSet, 
 		fuse.VolumeName("ProtoFS"),
 	)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer c.Close()
 
@@ -121,7 +121,7 @@ func MountList(marshaled [][]byte, fileDesc *google_protobuf.FileDescriptorSet, 
 	// check if the mount process has an error to report
 	<-c.Ready
 	if err := c.MountError; err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	return nil

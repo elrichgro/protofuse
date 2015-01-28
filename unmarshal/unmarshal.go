@@ -34,7 +34,6 @@ var fileDesc *google_protobuf.FileDescriptorSet
 func Unmarshal(fDesc *google_protobuf.FileDescriptorSet, packageName string, messageName string, buf [][]byte) (*pfuse.ProtoTree, error) {
 	fileDesc = fDesc
 	PT := &pfuse.ProtoTree{}
-	PT.Dir.Nodes = []pfuse.TreeNode{}
 	msg := fileDesc.GetMessage(packageName, messageName)
 	if msg == nil {
 		return nil, fmt.Errorf("Could not find message %s in package %s\n", messageName, packageName)

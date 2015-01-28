@@ -77,7 +77,7 @@ func GenerateLarge() ([][]byte, *google_protobuf.FileDescriptorSet, string, stri
 	if err != nil {
 		return nil, nil, "", "", err
 	}
-	buf := make([][]byte, 1)
+	buf := make([][]byte, 0)
 	for len(buf)*len(b) < 64000 {
 		buf = append(buf, b)
 	}
