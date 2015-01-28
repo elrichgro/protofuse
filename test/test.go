@@ -3,6 +3,7 @@ package test;
 import (
 	"os"
 	"io"
+	"log"
 
 	// "github.com/elrichgro/protofuse/unmarshal/test"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
@@ -52,7 +53,12 @@ func GenerateFull() ([]byte, *google_protobuf.FileDescriptorSet, string, string,
 		return nil, nil, "", "", err
 	}
 
-	fileDesc, err := getFileDescriptorSet("../test/test.desc")
+	gopath := os.Getenv("GOPATH")
+	if gopath == "" {
+		log.Fatal("GOPATH not set")
+	}
+
+	fileDesc, err := getFileDescriptorSet(gopath + "/src/github.com/elrichgro/protofuse/test/test.desc")
 	if err != nil {
 		return nil, nil, "", "", err
 	}
@@ -60,6 +66,18 @@ func GenerateFull() ([]byte, *google_protobuf.FileDescriptorSet, string, string,
 	packageName := "test"
 	messageName := "foo"
 
+	return buf, fileDesc, packageName, messageName, nil
+}
+
+func GenerateLarge() ([][]byte, *google_protobuf.FileDescriptorSet, string, string, error) {
+	b, fileDesc, packageName, messageName, err := GenerateFull()
+	if err != nil {
+		return nil, nil, "", "", err
+	}
+	buf := make([][]byte, 1)
+	for len(buf)*len(b) < 64000 {
+		buf = append(buf, b)
+	}
 	return buf, fileDesc, packageName, messageName, nil
 }
 

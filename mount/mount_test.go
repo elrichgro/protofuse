@@ -2,6 +2,7 @@ package mount
 
 import (
 	// "os/exec"
+	// "fmt"
 	"time"
 	"testing"
 	"github.com/elrichgro/protofuse/test"
@@ -37,6 +38,35 @@ func TestUnmount(t *testing.T) {
 	}
 	unmounted := <-c
 	if !unmounted {
-		t.Fail()
+		t.FailNow()
 	}
+}
+
+func TestMountLarge(t *testing.T) {
+	// c := make(chan bool)
+	var mountpoint string = "../test/mp"
+
+	buf, fDesc, packageName, messageName, err := test.GenerateLarge()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// fmt.Println(len(buf))
+
+	go func() {
+		err = MountList(buf, fDesc, packageName, messageName, mountpoint)
+		if err != nil {
+			t.Fatal(err)
+		}
+		// c <- true
+	}()	
+	// time.Sleep(1000*time.Millisecond)
+	// err = Unmount(mountpoint)
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
+	// unmounted := <-c
+	// if !unmounted {
+	// 	t.FailNow()
+	// }
 }
