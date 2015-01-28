@@ -1,3 +1,4 @@
+// 	Package test generates marshaled protocol buffers to be used for testing.
 package test;
 
 import (
@@ -29,6 +30,7 @@ type f struct {
 	F16 []*FooBaz
 }
 
+// Generate a marshaled protocol buffer containing all the different field types.
 func GenerateFull() ([]byte, *google_protobuf.FileDescriptorSet, string, string, error) {
 	name := "BAR"
 	names := []string{"name", "name2"}
@@ -69,6 +71,7 @@ func GenerateFull() ([]byte, *google_protobuf.FileDescriptorSet, string, string,
 	return buf, fileDesc, packageName, messageName, nil
 }
 
+// Generate a large list of marshaled protocol buffers.
 func GenerateLarge() ([][]byte, *google_protobuf.FileDescriptorSet, string, string, error) {
 	b, fileDesc, packageName, messageName, err := GenerateFull()
 	if err != nil {
@@ -81,6 +84,7 @@ func GenerateLarge() ([][]byte, *google_protobuf.FileDescriptorSet, string, stri
 	return buf, fileDesc, packageName, messageName, nil
 }
 
+// Gets the google_protobuf.FileDescriptorSet of filename.
 func getFileDescriptorSet(filename string) (*google_protobuf.FileDescriptorSet, error) {
 	file, err := os.Open(filename)
 	if err != nil {

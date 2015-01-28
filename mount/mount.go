@@ -12,6 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
+// 	The mount package provides methods to mount marshaled protocol buffers as a filesystem.
 package mount
 
 import (
@@ -28,7 +29,9 @@ import (
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 )
 
+//	Mounts a marshaled protocol buffer as a filesytem. 
 func Mount(marshaled []byte, fileDesc *google_protobuf.FileDescriptorSet, packageName string, messageName string, mountPoint string) error {
+	// mount
 	c, err := fuse.Mount(
 		mountPoint,
 		fuse.FSName("protofuse"),
@@ -41,6 +44,7 @@ func Mount(marshaled []byte, fileDesc *google_protobuf.FileDescriptorSet, packag
 	}
 	defer c.Close()
 
+	// unmount filesystem in the event of an interrupt
 	c1 := make(chan os.Signal, 1)
 	signal.Notify(c1, os.Interrupt)
 	go func(){
@@ -54,10 +58,13 @@ func Mount(marshaled []byte, fileDesc *google_protobuf.FileDescriptorSet, packag
     }
 	}()
 
+	// create the filesystem structure
 	PT, err := unmarshal.Unmarshal(fileDesc, packageName, messageName, [][]byte{marshaled})
 	if err != nil {
 		return err
 	}
+
+	// serve
 	err = fs.Serve(c, PT)
 	if err != nil {
 		return err
@@ -71,7 +78,9 @@ func Mount(marshaled []byte, fileDesc *google_protobuf.FileDescriptorSet, packag
 	return nil
 }
 
+// Mounts a list of marshaled protocol buffers as a filesystem.
 func MountList(marshaled [][]byte, fileDesc *google_protobuf.FileDescriptorSet, packageName string, messageName string, mountPoint string) error {
+	// mount
 	c, err := fuse.Mount(
 		mountPoint,
 		fuse.FSName("protofuse"),
@@ -84,6 +93,7 @@ func MountList(marshaled [][]byte, fileDesc *google_protobuf.FileDescriptorSet, 
 	}
 	defer c.Close()
 
+	// unmount the filesystem in the event of an interrupt
 	c1 := make(chan os.Signal, 1)
 	signal.Notify(c1, os.Interrupt)
 	go func(){
@@ -96,11 +106,13 @@ func MountList(marshaled [][]byte, fileDesc *google_protobuf.FileDescriptorSet, 
     }
 	}()
 
+	// create the filesystem structure
 	PT, err := unmarshal.Unmarshal(fileDesc, packageName, messageName, marshaled)
 	if err != nil {
 		return err
 	}
 
+	// serve
 	err = fs.Serve(c, PT)
 	if err != nil {
 		return err
@@ -115,6 +127,7 @@ func MountList(marshaled [][]byte, fileDesc *google_protobuf.FileDescriptorSet, 
 	return nil
 }
 
+// Tries to unmount the filesystem at dir.
 func Unmount(dir string) error {
 	err := fuse.Unmount(dir)
 	if err != nil {
@@ -123,7 +136,8 @@ func Unmount(dir string) error {
 	return nil
 }
 
-func GetDescriptorProto(name string, fileDesc *google_protobuf.FileDescriptorSet) (*google_protobuf.DescriptorProto, error) {
+// Finds the google_protobuf.DescriptorProto for the message name.
+func getDescriptorProto(name string, fileDesc *google_protobuf.FileDescriptorSet) (*google_protobuf.DescriptorProto, error) {
 	if string(name[0]) == "." {
 		s := strings.Split(name, ".")
 		slen := len(s)

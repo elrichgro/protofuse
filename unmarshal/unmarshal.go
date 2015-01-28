@@ -12,6 +12,8 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
+//	Package unmarshal provides functions to unmarshal marshaled protocol buffers
+//	into a pfuse.ProtoTree structure for mounting.
 package unmarshal
 
 import (
@@ -38,17 +40,10 @@ func Unmarshal(fDesc *google_protobuf.FileDescriptorSet, packageName string, mes
 		return nil, fmt.Errorf("Could not find message %s in package %s\n", messageName, packageName)
 	}
 
-	if len(buf) > 1 {
-		for i, buffer := range buf {
-			PT.Dir.Nodes = append(PT.Dir.Nodes, pfuse.TreeNode{Name: fmt.Sprintf("Message_%d", i+1), FieldNumber: 0, Type: google_protobuf.FieldDescriptorProto_TYPE_MESSAGE})
-			err := unmarshalMessage(msg, bytes.NewBuffer(buffer), &PT.Dir.Nodes[i], packageName, int32(i+1))
-			if err != nil {
-				return nil, err
-			}
-		}
-	} else {
-		PT.Dir.Nodes = append(PT.Dir.Nodes, pfuse.TreeNode{Name: "Message_1", FieldNumber: 0, Type: google_protobuf.FieldDescriptorProto_TYPE_MESSAGE})
-		err := unmarshalMessage(msg, bytes.NewBuffer(buf[0]), &PT.Dir.Nodes[0], packageName, 0)
+	// unmarshal messages
+	for i, buffer := range buf {
+		PT.Dir.Nodes = append(PT.Dir.Nodes, pfuse.TreeNode{Name: fmt.Sprintf("Message_%d", i+1), FieldNumber: 0, Type: google_protobuf.FieldDescriptorProto_TYPE_MESSAGE})
+		err := unmarshalMessage(msg, bytes.NewBuffer(buffer), &PT.Dir.Nodes[i], packageName)
 		if err != nil {
 			return nil, err
 		}
@@ -56,10 +51,11 @@ func Unmarshal(fDesc *google_protobuf.FileDescriptorSet, packageName string, mes
 	return PT, nil
 }
 
-func unmarshalMessage(msg *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfuse.TreeNode, packageName string, rN int32) error {
+func unmarshalMessage(msg *google_protobuf.DescriptorProto, buf *bytes.Buffer, t *pfuse.TreeNode, packageName string) error {
 	var repNum int32 = 0
 	var m map[int32]int32 = make(map[int32]int32)
 	dir := &pfuse.Dir{}
+
 	for buf.Len() != 0 {
 		tN := &pfuse.TreeNode{}
 		wireType, fieldNumber, err := decodeKey(buf)
@@ -70,6 +66,7 @@ func unmarshalMessage(msg *google_protobuf.DescriptorProto, buf *bytes.Buffer, t
 
 		var field *google_protobuf.FieldDescriptorProto
 
+		// check if field is an extension
 		if isExtension(msg, fieldNumber) {
 			_, field = fileDesc.FindExtensionByFieldNumber(packageName, msg.GetName(), fieldNumber)
 			if field == nil {
@@ -77,15 +74,17 @@ func unmarshalMessage(msg *google_protobuf.DescriptorProto, buf *bytes.Buffer, t
 			}
 		} else {
 			field, err = getField(msg, fieldNumber)
-			// field = msg.GetField()[fieldNumber-1]
 		}
 
+		// handle repeated fields
 		if field.GetLabel() == google_protobuf.FieldDescriptorProto_LABEL_REPEATED {
 			m[fieldNumber] += 1
 			repNum = m[fieldNumber]
 		} else {
 			repNum = 0
 		}
+
+		// handle packed repeated types
 		var packed bool = false
 		if field.GetOptions() != nil {
 			if field.GetOptions().GetPacked() {
@@ -161,6 +160,7 @@ func unmarshalField(wireType int8, field *google_protobuf.FieldDescriptorProto, 
 	return nil
 }
 
+// Decodes a key and returns the wiretype and field number.
 func decodeKey(buf *bytes.Buffer) (int8, int32, error) {
 	x, n := binary.Uvarint(buf.Bytes())
 	if n <= 0 {
@@ -327,7 +327,7 @@ func unmarshal2(field *google_protobuf.FieldDescriptorProto, buf *bytes.Buffer, 
 		if err != nil {
 			return err
 		}
-		unmarshalMessage(messageDesc, bytes.NewBuffer(p), t, packageName, rN)
+		unmarshalMessage(messageDesc, bytes.NewBuffer(p), t, packageName)
 	default:
 		t.Node = &pfuse.File{string(p)}
 	}
@@ -501,6 +501,7 @@ func decodeSint64(buf []byte) (int64, int, error) {
 	return int64((v >> 1) ^ uint64((int64(v&1)<<63)>>63)), n, nil
 }
 
+// Finds the google_protobuf.DescriptorProto for the message name.
 func getDescriptorProto(name string) (*google_protobuf.DescriptorProto, error) {
 	if string(name[0]) == "." {
 		s := strings.Split(name, ".")
@@ -534,6 +535,7 @@ func getDescriptorProto(name string) (*google_protobuf.DescriptorProto, error) {
 	return nil, fmt.Errorf("Message name not fully qualified: %s", name)
 }
 
+// Gets the google_protobuf.EnumDescriptorProto for name
 func getEnumDescriptorProto(name string) (*google_protobuf.EnumDescriptorProto, error) {
 	if string(name[0]) == "." {
 		s := strings.Split(name, ".")
