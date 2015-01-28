@@ -31,7 +31,7 @@ func TestUnmount(t *testing.T) {
 		}
 		c <- true
 	}()	
-	time.Sleep(100*time.Millisecond)
+	time.Sleep(200*time.Millisecond)
 	err = Unmount(mountpoint)
 	if err != nil {
 		t.Fatal(err)
@@ -43,7 +43,7 @@ func TestUnmount(t *testing.T) {
 }
 
 func TestMountLarge(t *testing.T) {
-	// c := make(chan bool)
+	c := make(chan bool)
 	var mountpoint string = "../test/mp"
 
 	buf, fDesc, packageName, messageName, err := test.GenerateLarge()
@@ -51,22 +51,20 @@ func TestMountLarge(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// fmt.Println(len(buf))
-
 	go func() {
 		err = MountList(buf, fDesc, packageName, messageName, mountpoint)
 		if err != nil {
 			t.Fatal(err)
 		}
-		// c <- true
+		c <- true
 	}()	
-	// time.Sleep(1000*time.Millisecond)
-	// err = Unmount(mountpoint)
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
-	// unmounted := <-c
-	// if !unmounted {
-	// 	t.FailNow()
-	// }
+	time.Sleep(2000*time.Millisecond)
+	err = Unmount(mountpoint)
+	if err != nil {
+		t.Fatal(err)
+	}
+	unmounted := <-c
+	if !unmounted {
+		t.FailNow()
+	}
 }
