@@ -73,6 +73,9 @@ func unmarshalMessage(msg *google_protobuf.DescriptorProto, buf *bytes.Buffer, t
 			}
 		} else {
 			field, err = getField(msg, fieldNumber)
+			if field != {
+				return err
+			}
 		}
 
 		// handle repeated fields
